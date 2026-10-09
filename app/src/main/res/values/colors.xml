@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="brand_primary">#FF2A6DF4</color>
+    <color name="app_background">#FFF7F9FC</color>
+    <color name="app_background_dark">#FF10131A</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>
