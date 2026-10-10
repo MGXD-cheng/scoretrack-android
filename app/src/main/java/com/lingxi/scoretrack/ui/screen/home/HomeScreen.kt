@@ -16,22 +16,20 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,11 +42,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lingxi.scoretrack.data.local.entity.ProfileEntity
+import com.lingxi.scoretrack.ui.components.AppTopBar
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onOpenScores: () -> Unit,
@@ -58,52 +56,46 @@ fun HomeScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showCreateDialog by remember { mutableStateOf(false) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(text = "学迹") },
-                actions = {
-                    IconButton(onClick = onOpenSettings) {
-                        Icon(
-                            imageVector = Icons.Filled.Settings,
-                            contentDescription = "设置"
-                        )
+    Column(modifier = Modifier.fillMaxSize()) {
+        AppTopBar(
+            title = "学迹",
+            actions = {
+                IconButton(onClick = onOpenSettings) {
+                    Icon(
+                        imageVector = Icons.Filled.Settings,
+                        contentDescription = "设置"
+                    )
+                }
+            }
+        )
+
+        Box(modifier = Modifier.weight(1f)) {
+            when {
+                state.isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
                     }
                 }
-            )
-        }
-    ) { innerPadding ->
-        when {
-            state.isLoading -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
+
+                state.isEmpty -> {
+                    EmptyProfileContent(
+                        onCreate = { showCreateDialog = true },
+                        modifier = Modifier.fillMaxSize()
+                    )
                 }
-            }
 
-            state.isEmpty -> {
-                EmptyProfileContent(
-                    onCreate = { showCreateDialog = true },
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                )
-            }
-
-            else -> {
-                HomeContent(
-                    state = state,
-                    onSwitchProfile = viewModel::switchProfile,
-                    onCreateProfile = { showCreateDialog = true },
-                    onOpenScores = onOpenScores,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding)
-                )
+                else -> {
+                    HomeContent(
+                        state = state,
+                        onSwitchProfile = viewModel::switchProfile,
+                        onCreateProfile = { showCreateDialog = true },
+                        onOpenScores = onOpenScores,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
     }
@@ -326,7 +318,6 @@ private fun CreateProfileDialog(
     onConfirm: (String) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
-
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("新建档案") },

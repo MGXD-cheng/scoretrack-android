@@ -36,6 +36,9 @@ sealed class AppDestination(
 
         const val EXAM_EDIT = "exam_edit"
 
+        /** 编辑考试路由：examId = 0 表示新建 */
+        fun examEditRoute(examId: Long = 0L): String = "$EXAM_EDIT?examId=$examId"
+
         const val SCORE_ENTRY = "score_entry"
 
         const val PAPER_DETAIL = "paper_detail"
