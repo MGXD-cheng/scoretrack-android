@@ -14,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.lingxi.scoretrack.ui.components.AppBottomBar
 import com.lingxi.scoretrack.ui.components.PlaceholderScreen
+import com.lingxi.scoretrack.ui.screen.charts.ChartsScreen
 import com.lingxi.scoretrack.ui.screen.exam.ExamEditScreen
 import com.lingxi.scoretrack.ui.screen.home.HomeScreen
 import com.lingxi.scoretrack.ui.screen.scores.ScoresScreen
@@ -76,10 +77,7 @@ fun AppNavHost(
                 )
             }
             composable(AppDestination.Charts.route) {
-                PlaceholderScreen(
-                    title = "图表",
-                    description = "成绩趋势折线图与科目雷达图"
-                )
+                ChartsScreen()
             }
             composable(AppDestination.Settings.route) {
                 PlaceholderScreen(
