@@ -51,6 +51,7 @@ import com.lingxi.scoretrack.ui.util.formatDate
 fun ExamEditScreen(
     examId: Long,
     onBack: () -> Unit,
+    onOpenPaper: (subjectId: Long) -> Unit,
     viewModel: ExamEditViewModel = hiltViewModel()
 ) {
     LaunchedEffect(examId) { viewModel.init(examId) }
@@ -108,6 +109,9 @@ fun ExamEditScreen(
                 itemsIndexed(state.entries, key = { _, e -> e.subjectId }) { index, entry ->
                     ScoreEntryCard(
                         entry = entry,
+                        // 新建考试时还没有 examId，试卷无从挂靠
+                        canOpenPaper = state.isEditing,
+                        onOpenPaper = { onOpenPaper(entry.subjectId) },
                         onScoreChange = { value ->
                             viewModel.updateEntry(index) { it.copy(score = value) }
                         },
@@ -229,6 +233,8 @@ private fun ExamInfoCard(
 @Composable
 private fun ScoreEntryCard(
     entry: ScoreEntryInput,
+    canOpenPaper: Boolean,
+    onOpenPaper: () -> Unit,
     onScoreChange: (String) -> Unit,
     onFullScoreChange: (String) -> Unit,
     onClassRankChange: (String) -> Unit,
@@ -243,10 +249,18 @@ private fun ScoreEntryCard(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                text = entry.subjectName,
-                style = MaterialTheme.typography.titleSmall
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = entry.subjectName,
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.weight(1f)
+                )
+                if (canOpenPaper) {
+                    TextButton(onClick = onOpenPaper) {
+                        Text("录小题分 ›")
+                    }
+                }
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = entry.score,

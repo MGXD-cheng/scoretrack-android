@@ -2,7 +2,9 @@ package com.lingxi.scoretrack.ui.screen.charts
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.lingxi.scoretrack.data.repository.AnalysisReportRepository
 import com.lingxi.scoretrack.data.repository.AppSettingRepository
+import com.lingxi.scoretrack.data.repository.ExamGoalRepository
 import com.lingxi.scoretrack.data.repository.ExamRepository
 import com.lingxi.scoretrack.data.repository.ScoreRepository
 import com.lingxi.scoretrack.data.repository.SubjectRepository
@@ -24,7 +26,9 @@ class ChartsViewModel @Inject constructor(
     private val examRepository: ExamRepository,
     private val scoreRepository: ScoreRepository,
     private val subjectRepository: SubjectRepository,
-    private val appSettingRepository: AppSettingRepository
+    private val appSettingRepository: AppSettingRepository,
+    private val examGoalRepository: ExamGoalRepository,
+    private val analysisReportRepository: AnalysisReportRepository
 ) : ViewModel() {
 
     private val profileId = MutableStateFlow(0L)
@@ -37,13 +41,18 @@ class ChartsViewModel @Inject constructor(
                 combine(
                     examRepository.observeByProfile(id),
                     subjectRepository.observeByProfile(id),
-                    scoreRepository.observeByProfile(id)
-                ) { exams, subjects, scores ->
+                    scoreRepository.observeByProfile(id),
+                    examGoalRepository.observeByProfile(id),
+                    analysisReportRepository.observeByProfile(id)
+                ) { exams, subjects, scores, goals, reports ->
                     ChartsUiState(
                         isLoading = false,
                         exams = exams,
                         subjects = subjects,
-                        scoresByExam = scores.groupBy { it.examId }
+                        scoresByExam = scores.groupBy { it.examId },
+                        goals = goals,
+                        // 仓库按创建时间倒序返回，第一条就是最新的
+                        latestReport = reports.firstOrNull()
                     )
                 }
             }

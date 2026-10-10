@@ -24,6 +24,12 @@ interface ProfileDao {
     @Query("SELECT * FROM profile WHERE isDefault = 1 LIMIT 1")
     suspend fun getDefault(): ProfileEntity?
 
+    @Query("SELECT * FROM profile ORDER BY isDefault DESC, updatedAt DESC")
+    suspend fun getAllOnce(): List<ProfileEntity>
+
+    @Query("DELETE FROM profile WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(profile: ProfileEntity): Long
 

@@ -5,10 +5,22 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.lingxi.scoretrack.data.local.entity.QuestionEntity
 import com.lingxi.scoretrack.data.local.entity.QuestionKnowledgeEntity
 
 @Dao
 interface QuestionKnowledgeDao {
+
+    /** 某个知识点下挂着的题目 */
+    @Query(
+        """
+        SELECT question.* FROM question
+        INNER JOIN question_knowledge link ON link.questionId = question.id
+        WHERE link.knowledgePointId = :knowledgePointId
+        ORDER BY question.id ASC
+        """
+    )
+    suspend fun getQuestionsOfPoint(knowledgePointId: Long): List<QuestionEntity>
 
     @Query("SELECT * FROM question_knowledge WHERE questionId = :questionId")
     suspend fun getByQuestion(questionId: Long): List<QuestionKnowledgeEntity>

@@ -2,6 +2,7 @@ package com.lingxi.scoretrack.data.repository
 
 import androidx.room.withTransaction
 import com.lingxi.scoretrack.data.local.AppDatabase
+import com.lingxi.scoretrack.data.local.dao.ProfileCleanupDao
 import com.lingxi.scoretrack.data.local.dao.ProfileDao
 import com.lingxi.scoretrack.data.local.dao.SubjectDao
 import com.lingxi.scoretrack.data.local.entity.ProfileEntity
@@ -18,6 +19,7 @@ import javax.inject.Singleton
 class ProfileRepository @Inject constructor(
     private val profileDao: ProfileDao,
     private val subjectDao: SubjectDao,
+    private val profileCleanupDao: ProfileCleanupDao,
     private val database: AppDatabase
 ) {
 
@@ -28,6 +30,8 @@ class ProfileRepository @Inject constructor(
     suspend fun getById(id: Long): ProfileEntity? = profileDao.getById(id)
 
     suspend fun getDefault(): ProfileEntity? = profileDao.getDefault()
+
+    suspend fun getAllOnce(): List<ProfileEntity> = profileDao.getAllOnce()
 
     /** 创建档案并预置科目，返回新档案 id */
     suspend fun createWithDefaultSubjects(
@@ -55,6 +59,31 @@ class ProfileRepository @Inject constructor(
         profileDao.update(profile.copy(updatedAt = System.currentTimeMillis()))
 
     suspend fun delete(profile: ProfileEntity) = profileDao.delete(profile)
+
+    /**
+     * 彻底删除档案及其全部关联数据（科目/考试/成绩/试卷/题目/错题/知识点/分析报告…）。
+     *
+     * 全程在一个事务里，按依赖顺序显式级联，不依赖 PRAGMA foreign_keys。
+     * 如果删掉的是默认档案，自动把剩下的第一个顶上 —— 避免出现「没有默认档案」的状态。
+     */
+    suspend fun deleteCascade(profileId: Long) = database.withTransaction {
+        profileCleanupDao.deleteQuestionKnowledge(profileId)
+        profileCleanupDao.deleteMistakes(profileId)
+        profileCleanupDao.deleteQuestions(profileId)
+        profileCleanupDao.deletePapers(profileId)
+        profileCleanupDao.deleteScores(profileId)
+        profileCleanupDao.deleteAnalysisReports(profileId)
+        profileCleanupDao.deleteImportTasks(profileId)
+        profileCleanupDao.deleteKnowledgePoints(profileId)
+        profileCleanupDao.deleteSubjects(profileId)
+        profileCleanupDao.deleteExams(profileId)
+        profileDao.deleteById(profileId)
+
+        val remaining = profileDao.getAllOnce()
+        if (remaining.isNotEmpty() && remaining.none { it.isDefault }) {
+            profileDao.markDefault(remaining.first().id)
+        }
+    }
 
     suspend fun setDefault(id: Long) = database.withTransaction {
         profileDao.clearDefault()

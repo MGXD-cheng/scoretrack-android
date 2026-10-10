@@ -6,10 +6,12 @@ import com.lingxi.scoretrack.data.local.AppDatabase
 import com.lingxi.scoretrack.data.local.dao.AnalysisReportDao
 import com.lingxi.scoretrack.data.local.dao.AppSettingDao
 import com.lingxi.scoretrack.data.local.dao.ExamDao
+import com.lingxi.scoretrack.data.local.dao.ExamGoalDao
 import com.lingxi.scoretrack.data.local.dao.ImportTaskDao
 import com.lingxi.scoretrack.data.local.dao.KnowledgePointDao
 import com.lingxi.scoretrack.data.local.dao.MistakeDao
 import com.lingxi.scoretrack.data.local.dao.PaperDao
+import com.lingxi.scoretrack.data.local.dao.ProfileCleanupDao
 import com.lingxi.scoretrack.data.local.dao.ProfileDao
 import com.lingxi.scoretrack.data.local.dao.QuestionDao
 import com.lingxi.scoretrack.data.local.dao.QuestionKnowledgeDao
@@ -37,10 +39,16 @@ object DatabaseModule {
     fun provideProfileDao(db: AppDatabase): ProfileDao = db.profileDao()
 
     @Provides
+    fun provideProfileCleanupDao(db: AppDatabase): ProfileCleanupDao = db.profileCleanupDao()
+
+    @Provides
     fun provideSubjectDao(db: AppDatabase): SubjectDao = db.subjectDao()
 
     @Provides
     fun provideExamDao(db: AppDatabase): ExamDao = db.examDao()
+
+    @Provides
+    fun provideExamGoalDao(db: AppDatabase): ExamGoalDao = db.examGoalDao()
 
     @Provides
     fun provideScoreDao(db: AppDatabase): ScoreDao = db.scoreDao()

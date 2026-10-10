@@ -19,6 +19,10 @@ fun scoreRate(score: Float, fullScore: Float): Float =
 fun formatDate(timestamp: Long): String =
     SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date(timestamp))
 
+/** 精确到分钟。用于诊断报告这类「何时生成」有意义的场景 */
+fun formatDateTime(timestamp: Long): String =
+    SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(timestamp))
+
 /** 得分率配色：优/良/中/待提升 */
 fun scoreColorHex(rate: Float): Long = when {
     rate >= 0.85f -> 0xFF22C55E

@@ -21,6 +21,7 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -41,12 +42,20 @@ import com.lingxi.scoretrack.ui.util.scoreRate
 fun ScoresScreen(
     onCreateExam: () -> Unit,
     onEditExam: (Long) -> Unit,
+    onImportSheet: () -> Unit,
     viewModel: ScoresViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     Column(modifier = Modifier.fillMaxSize()) {
-        AppTopBar(title = "成绩")
+        AppTopBar(
+            title = "成绩",
+            actions = {
+                TextButton(onClick = onImportSheet) {
+                    Text("识别导入")
+                }
+            }
+        )
 
         Box(modifier = Modifier.weight(1f)) {
             when {

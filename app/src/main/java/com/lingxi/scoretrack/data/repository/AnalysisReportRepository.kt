@@ -19,6 +19,8 @@ class AnalysisReportRepository @Inject constructor(
 
     suspend fun getById(id: Long): AnalysisReportEntity? = analysisReportDao.getById(id)
 
+    fun observeById(id: Long): Flow<AnalysisReportEntity?> = analysisReportDao.observeById(id)
+
     suspend fun getLatest(profileId: Long): AnalysisReportEntity? =
         analysisReportDao.getLatest(profileId)
 

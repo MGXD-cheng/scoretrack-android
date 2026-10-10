@@ -23,9 +23,38 @@ class AiConfigStore @Inject constructor(
 
     fun saveTextConfig(config: AiModelConfig) = write(PREFIX_TEXT, config)
 
-    fun visionConfig(): AiModelConfig = read(PREFIX_VISION)
+    /**
+     * 读视觉模型配置。
+     *
+     * 如果用户**没单独配**视觉模型，但文本模型用的是 DeepSeek，
+     * 就自动补一个可用的视觉配置 —— **同地址、同 key，只换模型名**。
+     *
+     * 理由：换服务商的门槛远高于换个模型名。用户既然已经在用 DeepSeek，
+     * 就没必要为了识别一张成绩单再去注册第二个账号。
+     * 其他服务商不做这种推断 —— 我们没法假设它也有对应的视觉模型。
+     */
+    fun visionConfig(): AiModelConfig {
+        val stored = read(PREFIX_VISION)
+        if (stored.isConfigured) return stored
+        return deriveVisionFromText()
+    }
 
     fun saveVisionConfig(config: AiModelConfig) = write(PREFIX_VISION, config)
+
+    private fun deriveVisionFromText(): AiModelConfig {
+        val text = textConfig()
+        val isDeepSeek = text.baseUrl.contains("deepseek", ignoreCase = true)
+        if (!text.isConfigured || !isDeepSeek) return AiModelConfig()
+
+        return AiModelConfig(
+            baseUrl = text.baseUrl,
+            apiKey = text.apiKey,
+            modelName = AiModelConfig.DEFAULT_VISION_MODEL,
+            temperature = text.temperature,
+            maxTokens = text.maxTokens,
+            enabled = true
+        )
+    }
 
     /** 是否已经至少配置好了文本模型（AI 功能可用性的前置判断） */
     fun hasUsableTextModel(): Boolean = textConfig().isConfigured

@@ -23,12 +23,24 @@ data class AiModelConfig(
     companion object {
         const val DEFAULT_TEXT_BASE_URL = "https://api.deepseek.com"
         const val DEFAULT_TEXT_MODEL = "deepseek-chat"
-        const val DEFAULT_VISION_BASE_URL = ""
-        const val DEFAULT_VISION_MODEL = ""
+
+        /**
+         * DeepSeek 的视觉模型，2026-08 上线。
+         *
+         * 和文本模型**同地址、同 key** —— 用户手里那把 DeepSeek 的 key
+         * 本来就能识图，只是需要换一个模型名。
+         */
+        const val DEFAULT_VISION_BASE_URL = "https://api.deepseek.com"
+        const val DEFAULT_VISION_MODEL = "deepseek-v4-flash-vision-exp"
 
         val DefaultText = AiModelConfig(
             baseUrl = DEFAULT_TEXT_BASE_URL,
             modelName = DEFAULT_TEXT_MODEL
+        )
+
+        val DefaultVision = AiModelConfig(
+            baseUrl = DEFAULT_VISION_BASE_URL,
+            modelName = DEFAULT_VISION_MODEL
         )
     }
 }

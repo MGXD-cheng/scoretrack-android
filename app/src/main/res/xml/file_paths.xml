@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    FileProvider 的共享路径白名单。
+
+    只开放 cacheDir/camera —— 拍照的原图放这里，用完即弃。
+    千万不要开放整个 filesDir 或者外部存储根目录：
+    Provider 一旦暴露过宽的路径，等于把 App 私有数据摆到桌面上。
+-->
+<paths>
+    <cache-path
+        name="camera"
+        path="camera/" />
+    <external-cache-path
+        name="camera_external"
+        path="camera/" />
+</paths>

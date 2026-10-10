@@ -16,7 +16,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
@@ -42,18 +41,33 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lingxi.scoretrack.data.local.entity.ProfileEntity
+import com.lingxi.scoretrack.ui.components.AnalysisCard
 import com.lingxi.scoretrack.ui.components.AppTopBar
+import com.lingxi.scoretrack.ui.components.ChartsSection
+import com.lingxi.scoretrack.ui.components.GoalCard
+import com.lingxi.scoretrack.ui.screen.charts.ChartsViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/**
+ * 首页 —— 也是整个 App 的仪表盘。
+ *
+ * 顺序是「我是谁 → 最近怎么样 → 趋势长什么样 → 目标还差多少 → AI 怎么看 → 该做什么」。
+ * 图表本来单占一个 Tab，但它其实就是首页该有的主体内容 ——
+ * 合并之后底部导航少一个入口，首页也不再是一堆跳转按钮。
+ */
 @Composable
 fun HomeScreen(
     onOpenScores: () -> Unit,
     onOpenSettings: () -> Unit,
-    viewModel: HomeViewModel = hiltViewModel()
+    onOpenAnalysis: () -> Unit,
+    onOpenGoalEdit: () -> Unit,
+    viewModel: HomeViewModel = hiltViewModel(),
+    chartsViewModel: ChartsViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val chartsState by chartsViewModel.uiState.collectAsStateWithLifecycle()
     var showCreateDialog by remember { mutableStateOf(false) }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -90,9 +104,12 @@ fun HomeScreen(
                 else -> {
                     HomeContent(
                         state = state,
+                        chartsState = chartsState,
                         onSwitchProfile = viewModel::switchProfile,
                         onCreateProfile = { showCreateDialog = true },
                         onOpenScores = onOpenScores,
+                        onOpenAnalysis = onOpenAnalysis,
+                        onOpenGoalEdit = onOpenGoalEdit,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -143,9 +160,12 @@ private fun EmptyProfileContent(
 @Composable
 private fun HomeContent(
     state: HomeUiState,
+    chartsState: com.lingxi.scoretrack.ui.screen.charts.ChartsUiState,
     onSwitchProfile: (ProfileEntity) -> Unit,
     onCreateProfile: () -> Unit,
     onOpenScores: () -> Unit,
+    onOpenAnalysis: () -> Unit,
+    onOpenGoalEdit: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -202,6 +222,54 @@ private fun HomeContent(
                 examDate = state.latestExam?.date,
                 onClick = onOpenScores
             )
+        }
+
+        // ---- 图表 —— 从原「图表」Tab 合并过来 ----
+        if (chartsState.isLoading) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        } else if (chartsState.isEmpty) {
+            // 没考试也允许设目标 —— 目标本来就是给「下一次」定的
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "还没有可绘制的数据",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "在「成绩」里录入至少一次考试，趋势图和科目均衡度就出来了。",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            item { GoalCard(state = chartsState, onOpenGoalEdit = onOpenGoalEdit) }
+            item { AnalysisCard(state = chartsState, onOpenAnalysis = onOpenAnalysis) }
+        } else {
+            item {
+                ChartsSection(
+                    state = chartsState,
+                    onOpenGoalEdit = onOpenGoalEdit,
+                    onOpenAnalysis = onOpenAnalysis
+                )
+            }
         }
 
         item {

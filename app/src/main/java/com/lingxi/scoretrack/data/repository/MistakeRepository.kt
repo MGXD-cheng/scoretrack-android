@@ -2,6 +2,7 @@ package com.lingxi.scoretrack.data.repository
 
 import com.lingxi.scoretrack.data.local.dao.MistakeDao
 import com.lingxi.scoretrack.data.local.entity.MistakeEntity
+import com.lingxi.scoretrack.data.local.model.MistakeDetailRow
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -16,6 +17,16 @@ class MistakeRepository @Inject constructor(
 
     fun observeByProfile(profileId: Long): Flow<List<MistakeEntity>> =
         mistakeDao.observeByProfile(profileId)
+
+    /** 带上下文（考试/科目/题目）的错题列表 */
+    fun observeDetailByProfile(profileId: Long): Flow<List<MistakeDetailRow>> =
+        mistakeDao.observeDetailByProfile(profileId)
+    fun observeDetailById(mistakeId: Long): Flow<MistakeDetailRow?> =
+        mistakeDao.observeDetailById(mistakeId)
+
+    /** 一次性取全部错题详情，给 AI 归纳知识点用 */
+    suspend fun getDetailByProfile(profileId: Long): List<MistakeDetailRow> =
+        mistakeDao.getDetailByProfile(profileId)
 
     fun observePendingCount(profileId: Long): Flow<Int> =
         mistakeDao.observePendingCount(profileId)

@@ -20,6 +20,9 @@ interface AnalysisReportDao {
     @Query("SELECT * FROM analysis_report WHERE id = :id")
     suspend fun getById(id: Long): AnalysisReportEntity?
 
+    @Query("SELECT * FROM analysis_report WHERE id = :id")
+    fun observeById(id: Long): Flow<AnalysisReportEntity?>
+
     @Query("SELECT * FROM analysis_report WHERE profileId = :profileId ORDER BY createdAt DESC LIMIT 1")
     suspend fun getLatest(profileId: Long): AnalysisReportEntity?
 
