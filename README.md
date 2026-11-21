@@ -2,7 +2,7 @@
 
 Android 端、纯本地存储的学生个人成绩与试卷分析工具。
 
-> 当前进度：**v0.4.0 —— 补掉三个「做了一半」的洞，AI 链路首次实测跑通**
+> 当前进度：**v0.4.0 —— 完善了之前的设计，修复了缺陷， AI 链路首次实测跑通**
 
 ## 技术栈
 
@@ -73,10 +73,14 @@ Android 端、纯本地存储的学生个人成绩与试卷分析工具。
 | 文本模型 | 成绩解析、分析报告、CSV / Excel / Word 文本提取 |
 | 视觉模型 | 成绩单照片、PDF、图片识别 |
 
-两者默认都指向 DeepSeek：
+两者默认都指向 DeepSeek（模型名于 2026-11-21 实测核对）：
 
-- 文本：`deepseek-chat`
-- 视觉：`deepseek-v4-flash-vision-exp`
+- 文本：`deepseek-v4-pro`（纯文本，推理最强）
+- 视觉：`deepseek-flash`（目前唯一支持图片输入的）
+
+> 旧的 `deepseek-chat` / `deepseek-v4-flash-vision-exp` 现在仍能调通，但那只是
+> 服务端的兼容别名（请求它们实际会回 `"model":"deepseek-flash"`），随时可能真下线。
+> 如果这一年里服务商又换了名字，`AiModelConfig` 里的两个常量就是唯一需要改的地方。
 
 **地址与 key 相同**。如果只填了文本配置，视觉配置会自动派生 ——
 不用为了识别一张成绩单再去注册第二家服务商。
@@ -100,15 +104,8 @@ release **开启了 R8 混淆与资源压缩**，体积约为 debug 的八分之
 R8 会把「引用了但找不到的类」全列出来（多数是编译期注解，运行时根本不存在），
 按提示补 `-dontwarn` 即可。这类问题**只在 release 出现**，debug 完全看不到。
 
-**签名**：使用 `keystore/release.keystore` 正式签名，口令在 `keystore.properties`
-（两者都被 `.gitignore` 排除）。这两个文件不存在时构建会自动退回 debug 签名
-并打印警告 —— 所以别人 clone 下来也能直接 `assembleRelease`，只是产出的包不能发布。
-
-> ⚠️ **密钥必须自己备份**。丢了就永远无法再更新这个应用，没有找回机制。
-
-**发布前请读 [RELEASE.md](RELEASE.md)** —— 里面写了发版步骤、
-产物验证方法（`BUILD SUCCESSFUL` 不代表包是好的，这项目真踩过），
-以及上架 Google Play 还缺什么。
+**发布前请读 [RELEASE.md](RELEASE.md)** —— 里面写了发版步骤，以及产物验证方法
+（`BUILD SUCCESSFUL` 只说明编译过了，不代表包是好的，这个项目真踩过这个坑）。
 
 ## 说明
 
