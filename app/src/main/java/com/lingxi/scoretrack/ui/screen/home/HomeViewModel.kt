@@ -3,10 +3,10 @@ package com.lingxi.scoretrack.ui.screen.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lingxi.scoretrack.data.local.entity.ProfileEntity
-import com.lingxi.scoretrack.data.repository.AppSettingRepository
 import com.lingxi.scoretrack.data.repository.ExamRepository
 import com.lingxi.scoretrack.data.repository.MistakeRepository
 import com.lingxi.scoretrack.data.repository.ProfileRepository
+import com.lingxi.scoretrack.domain.session.ProfileSession
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,10 +26,10 @@ class HomeViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val examRepository: ExamRepository,
     private val mistakeRepository: MistakeRepository,
-    private val appSettingRepository: AppSettingRepository
+    private val profileSession: ProfileSession
 ) : ViewModel() {
 
-    private val currentProfileId = MutableStateFlow(0L)
+    private val currentProfileId = profileSession.currentProfileId
 
     val uiState: StateFlow<HomeUiState> = currentProfileId
         .flatMapLatest { id ->
@@ -61,40 +61,14 @@ class HomeViewModel @Inject constructor(
             initialValue = HomeUiState()
         )
 
-    init {
-        viewModelScope.launch {
-            val stored = appSettingRepository.getLong(
-                AppSettingRepository.KEY_CURRENT_PROFILE_ID,
-                0L
-            )
-            val resolved = if (stored > 0L) {
-                stored
-            } else {
-                val fallback = profileRepository.getDefault()
-                    ?: profileRepository.observeAll().first().firstOrNull()
-                fallback?.id ?: 0L
-            }
-            currentProfileId.value = resolved
-            if (resolved > 0L) {
-                appSettingRepository.putLong(
-                    AppSettingRepository.KEY_CURRENT_PROFILE_ID,
-                    resolved
-                )
-            }
-        }
-    }
-
+    /**
+     * 切换档案。
+     *
+     * 只改 ProfileSession 这一处 —— 其余 9 个 ViewModel 订阅的都是同一个
+     * StateFlow，会跟着一起重算，不用挨个通知，也就不会漏。
+     */
     fun switchProfile(profile: ProfileEntity) {
-        currentProfileId.value = profile.id
-        viewModelScope.launch {
-            appSettingRepository.putLong(
-                AppSettingRepository.KEY_CURRENT_PROFILE_ID,
-                profile.id
-            )
-            if (!profile.isDefault) {
-                profileRepository.setDefault(profile.id)
-            }
-        }
+        viewModelScope.launch { profileSession.switchTo(profile.id) }
     }
 
     /** 新建档案：自动预置 9 门科目，并立即切换为当前档案 */
@@ -106,8 +80,7 @@ class HomeViewModel @Inject constructor(
                 name = trimmed,
                 isDefault = true
             )
-            currentProfileId.value = id
-            appSettingRepository.putLong(AppSettingRepository.KEY_CURRENT_PROFILE_ID, id)
+            profileSession.switchTo(id)
         }
     }
 }

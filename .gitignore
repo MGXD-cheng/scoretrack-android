@@ -20,6 +20,7 @@ local.properties
 /keystore/
 *.jks
 *.keystore
+keystore.properties
 
 # 构建产物
 *.apk

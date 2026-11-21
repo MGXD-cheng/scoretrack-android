@@ -8,11 +8,24 @@ import kotlinx.serialization.Serializable
  *
  * 这一层是**领域模型**（UI 直接编辑它），跟模型返回的原始 JSON 解耦 ——
  * 模型输出的字段名可能变、可能缺、可能是字符串数字，都在解析阶段兜住。
+ *
+ * ## 关于 [detectedStudents]
+ * 一份文件里可能有多个人的成绩（班级成绩表就是这么干的）。
+ * [subjects] 永远表示**当前选中的那个人**的成绩 —— 这样确认页、落库
+ * 那些现有代码完全不用感知「多人」这件事。候选名单另外挂在
+ * [detectedStudents] 上，只有真的多于一个人时才有值。
  */
 data class RecognizedExam(
     val examName: String,
     val examDate: String?,          // yyyy-MM-dd
-    val subjects: List<RecognizedSubject>
+    val subjects: List<RecognizedSubject>,
+    /**
+     * 这份文件里识别出的**全部**学生。
+     *
+     * 只识别出一个人（绝大多数情况）时为空列表 —— UI 据此判断
+     * 「要不要弹选择器」，不用再去比长度。
+     */
+    val detectedStudents: List<DetectedStudent> = emptyList()
 ) {
     val totalScore: Float get() = subjects.sumOf { it.score.toDouble() }.toFloat()
 
@@ -22,6 +35,17 @@ data class RecognizedExam(
 
     val isEmpty: Boolean get() = subjects.isEmpty()
 }
+
+/**
+ * 一份文件里识别出的某个学生。
+ *
+ * [name] 恒非空 —— 模型没给出名字的会占位成「学生 N」，
+ * 而不是留个空字符串让 UI 显示成空白选项。
+ */
+data class DetectedStudent(
+    val name: String,
+    val subjects: List<RecognizedSubject>
+)
 
 data class RecognizedSubject(
     val subjectName: String,
@@ -60,6 +84,16 @@ data class RecognizeResult(
 internal data class RawRecognizedExam(
     @SerialName("examName") val examName: String? = null,
     @SerialName("examDate") val examDate: String? = null,
+    /** 单人格式（旧提示词 / 模型偷懒时走这条） */
+    @SerialName("subjects") val subjects: List<RawRecognizedSubject> = emptyList(),
+    /** 多人格式（新提示词）。两种都给默认值，解析层两种都认 */
+    @SerialName("students") val students: List<RawRecognizedStudent> = emptyList()
+)
+
+@Serializable
+internal data class RawRecognizedStudent(
+    @SerialName("name") val name: String? = null,
+    @SerialName("studentName") val studentName: String? = null,
     @SerialName("subjects") val subjects: List<RawRecognizedSubject> = emptyList()
 )
 

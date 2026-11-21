@@ -43,6 +43,18 @@ object DocumentExtractor {
                 if (rows.isEmpty()) error("表格里没读到内容，确认一下不是空表")
                 Extracted.Text(content = renderTable(rows), fileType = "xlsx")
             }
+            "docx" -> {
+                val text = context.contentResolver.openInputStream(uri)
+                    ?.use { DocxParser.parse(it) }
+                    ?: error("打不开这个 Word 文件")
+                if (text.isBlank()) {
+                    error(
+                        "这个 Word 里没读到文字 —— 如果正文是扫描图片，" +
+                            "用「拍照识别」或先转成 PDF 效果更好"
+                    )
+                }
+                Extracted.Text(content = text, fileType = "docx")
+            }
 
             "pdf" -> {
                 val urls = PdfPageRenderer.toDataUrls(context, uri)
@@ -51,6 +63,9 @@ object DocumentExtractor {
             }
 
             "xls" -> error(".xls 是老格式读不了，请在 Excel 里另存为 .xlsx 或 .csv")
+
+            "doc" -> error(".doc 是老格式读不了，请在 Word 里另存为 .docx")
+
 
             else -> {
                 if (mimeType.startsWith("image/") || extension in IMAGE_EXTENSIONS) {
@@ -68,7 +83,7 @@ object DocumentExtractor {
                         )
                     Extracted.Images(listOf(url), fileType = "image")
                 } else {
-                    error("暂不支持 .$extension 这种格式，试试 CSV / Excel / PDF / 图片")
+                    error("暂不支持 .$extension 这种格式，试试 CSV / Excel / Word / PDF / 图片")
                 }
             }
         }
@@ -89,6 +104,8 @@ object DocumentExtractor {
         "text/plain",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/msword",
         "application/pdf",
         "image/*"
     )

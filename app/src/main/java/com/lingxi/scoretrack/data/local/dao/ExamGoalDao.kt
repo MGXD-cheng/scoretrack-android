@@ -23,6 +23,10 @@ interface ExamGoalDao {
     @Query("SELECT * FROM exam_goal WHERE profileId = :profileId AND subjectId IS :subjectId LIMIT 1")
     suspend fun find(profileId: Long, subjectId: Long?): ExamGoalEntity?
 
+    /** 同步导出用：某档案下的全部目标（含总分目标和各科目标） */
+    @Query("SELECT * FROM exam_goal WHERE profileId = :profileId")
+    suspend fun getByProfileOnce(profileId: Long): List<ExamGoalEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(goal: ExamGoalEntity): Long
 

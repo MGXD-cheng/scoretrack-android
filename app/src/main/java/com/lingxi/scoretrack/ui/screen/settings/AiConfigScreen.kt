@@ -31,6 +31,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lingxi.scoretrack.domain.model.AiModelConfig
 import com.lingxi.scoretrack.ui.components.AppTopBar
 
 @Composable
@@ -208,7 +209,9 @@ private fun ModelFormCard(
                 value = form.modelName,
                 onValueChange = { value -> onFormChange { it.copy(modelName = value) } },
                 label = { Text("模型名") },
-                placeholder = { Text("deepseek-chat") },
+                // 占位符跟着默认值走。写死一个已下线的模型名，
+                // 用户照着填就会得到「模型不存在」
+                placeholder = { Text(AiModelConfig.DEFAULT_TEXT_MODEL) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )

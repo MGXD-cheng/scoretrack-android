@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.lingxi.scoretrack.ui.screen.charts.ChartsUiState
+import com.lingxi.scoretrack.ui.theme.ColorWarning
 import com.lingxi.scoretrack.ui.util.formatDateTime
 import com.lingxi.scoretrack.ui.util.formatScore
 
@@ -62,20 +63,59 @@ fun ChartsSection(
 
         ChartCard(
             title = "科目均衡度",
-            subtitle = if (state.latestExamName.isNotEmpty()) {
-                "最近一次：${state.latestExamName}"
-            } else {
-                "最近一次考试"
+            subtitle = buildString {
+                append(
+                    if (state.latestExamName.isNotEmpty()) {
+                        "最近一次：${state.latestExamName}"
+                    } else {
+                        "最近一次考试"
+                    }
+                )
+                if (state.latestTargetPoints.isNotEmpty()) {
+                    append(" · 橙色是各科目标")
+                }
             }
         ) {
             SubjectRadarChart(
                 points = state.latestRatePoints,
                 accentColor = colorScheme.primary,
                 labelColor = colorScheme.onSurfaceVariant,
+                targetPoints = state.latestTargetPoints,
+                targetColor = ColorWarning,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(260.dp)
             )
+        }
+
+        // 饼图只在有失分时出现 —— 全科满分属于极罕见情况，
+        // 那时候一片空白比一张空饼图更诚实
+        if (state.latestLossSlices.isNotEmpty()) {
+            ChartCard(
+                title = "失分构成",
+                subtitle = "最近一次考试，分数主要丢在哪一科"
+            ) {
+                SubjectLossPieChart(
+                    slices = state.latestLossSlices,
+                    labelColor = colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(240.dp)
+                )
+            }
+        }
+
+        if (state.heatMap.isNotEmpty()) {
+            ChartCard(
+                title = "科目表现矩阵",
+                subtitle = "行是科目、列是考试，颜色越暖越危险 —— 整行偏红就是长期短板"
+            ) {
+                SubjectExamHeatMap(
+                    rows = state.heatMap,
+                    examLabels = state.heatExamLabels,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
 
         GoalCard(state = state, onOpenGoalEdit = onOpenGoalEdit)

@@ -5,6 +5,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -45,6 +47,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lingxi.scoretrack.data.file.DocumentExtractor
 import com.lingxi.scoretrack.domain.model.DIFFICULTY_OPTIONS
+import com.lingxi.scoretrack.domain.model.QUESTION_TYPE_OPTIONS
 import com.lingxi.scoretrack.domain.model.QuestionDraft
 import com.lingxi.scoretrack.ui.components.AppTopBar
 import com.lingxi.scoretrack.ui.util.formatScore
@@ -65,7 +68,7 @@ fun PaperEditScreen(
 
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // 上传一份卷子（照片 / PDF / CSV / Excel），让 AI 把小题读出来
+    // 上传一份卷子（照片 / PDF / Word / CSV / Excel），让 AI 把小题读出来
     val filePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -161,7 +164,7 @@ fun PaperEditScreen(
             item {
                 Text(
                     text = "得分低于满分的题会自动进入错题本；改对之后会自动移出。\n" +
-                        "也可以点右上角「导入」，上传卷子照片、PDF、CSV 或 Excel，" +
+                        "也可以点右上角「导入」，上传卷子照片、PDF、Word、CSV 或 Excel，" +
                         "AI 会按题号把小题填进来（同题号更新，新题号追加）。",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -198,7 +201,7 @@ private fun SummaryCard(state: PaperEditUiState) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 private fun QuestionCard(
     index: Int,
@@ -278,6 +281,21 @@ private fun QuestionCard(
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         modifier = Modifier.weight(1f)
                     )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                // 题型。之前这里完全没有入口 —— question.type 有字段、
+                // 错题详情也在读，但录入时压根没机会填，一直是 null。
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    QUESTION_TYPE_OPTIONS.forEach { option ->
+                        FilterChip(
+                            selected = draft.type == option,
+                            onClick = {
+                                onUpdate { it.copy(type = if (it.type == option) "" else option) }
+                            },
+                            label = { Text(option) }
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))

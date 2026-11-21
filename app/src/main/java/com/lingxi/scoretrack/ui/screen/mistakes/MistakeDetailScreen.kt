@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lingxi.scoretrack.ui.components.AppTopBar
+import com.lingxi.scoretrack.ui.theme.ColorSuccess
 import com.lingxi.scoretrack.ui.util.formatScore
 
 private val REVIEW_STATUSES = listOf("未复习", "复习中", "已掌握")
@@ -134,7 +135,7 @@ fun MistakeDetailScreen(
                         LabeledBlock(
                             label = "正确答案",
                             value = row.answer,
-                            color = Color(0xFF22C55E)
+                            color = ColorSuccess
                         )
                     }
                 }

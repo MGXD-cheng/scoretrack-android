@@ -45,6 +45,8 @@ import com.lingxi.scoretrack.ui.components.AnalysisCard
 import com.lingxi.scoretrack.ui.components.AppTopBar
 import com.lingxi.scoretrack.ui.components.ChartsSection
 import com.lingxi.scoretrack.ui.components.GoalCard
+import androidx.compose.material.icons.filled.Person
+import com.lingxi.scoretrack.ui.components.EmptyState
 import com.lingxi.scoretrack.ui.screen.charts.ChartsViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -133,28 +135,18 @@ private fun EmptyProfileContent(
     onCreate: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier.padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "还没有档案",
-            style = MaterialTheme.typography.titleLarge
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "创建第一个档案，系统会自动为你准备好 9 门科目。",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(onClick = onCreate) {
-            Icon(imageVector = Icons.Filled.Add, contentDescription = null)
-            Spacer(modifier = Modifier.height(0.dp))
-            Text(text = "  创建档案")
+    EmptyState(
+        icon = Icons.Filled.Person,
+        title = "还没有档案",
+        description = "创建第一个档案，系统会自动为你准备好 9 门科目。",
+        modifier = modifier,
+        action = {
+            Button(onClick = onCreate) {
+                Icon(imageVector = Icons.Filled.Add, contentDescription = null)
+                Text(text = "  创建档案")
+            }
         }
-    }
+    )
 }
 
 @Composable

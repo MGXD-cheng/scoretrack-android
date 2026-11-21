@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -6,16 +8,51 @@ plugins {
     alias(libs.plugins.hilt)
 }
 
+// ===========================================================================
+// 签名配置
+//
+// 正式签名用的密钥和密码不放在仓库里（keystore.properties 已被 .gitignore 忽略）。
+// 这个文件不存在时 —— 比如别人 clone 下来第一次构建、或者 CI 上没有密钥 ——
+// release 会自动退回 debug 签名，so `assembleRelease` 永远能跑通，
+// 不会因为缺密钥直接报错卡住整条流水线。
+//
+// 代价是 debug 签名的 release 包**装不了正式版**（签名不一致），
+// 所以构建时会打印一行警告提醒。
+// ===========================================================================
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        keystorePropertiesFile.inputStream().use { load(it) }
+    }
+}
+val hasReleaseKeystore = keystorePropertiesFile.exists()
+
 android {
     namespace = "com.lingxi.scoretrack"
     compileSdk = 36
+
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                // v1（JAR 签名）对 minSdk 27 已经没用了 —— Android 7 起就认 v2+，
+                // 而我们的 minSdk 是 27（Android 8.1）。关掉能省一点签名时间。
+                enableV1Signing = false
+                enableV2Signing = true
+                enableV3Signing = true
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = "com.lingxi.scoretrack"
         minSdk = 27
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 4
+        versionName = "0.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -25,11 +62,33 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // 之前一直是 false —— 意味着 release 包和 debug 包一样大、一样能被反编译。
+            // 开启混淆 + 资源压缩后 APK 大约能小一半，但必须配合 proguard-rules.pro
+            // 里那几条 keep：Retrofit 的接口方法是靠反射找的，serialization 的
+            // serializer 也是靠反射找的，不 keep 会在运行时炸（而且只有 release 包炸）。
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // 签名：有正式 keystore 就用它，没有就退回 debug。
+            //
+            // 之前一直是「无脑用 debug 签名」，理由是混淆的坑几乎全是运行时的
+            //（反射找不到类），光靠 assembleRelease 成功完全验证不了；
+            // 不签名的话产物是 app-release-unsigned.apk，装不进手机，等于没法验证。
+            //
+            // 现在有了正式 keystore，验证混淆依然能用正式包 —— 而且更接近真实环境。
+            // 注意：**换签名后必须卸载重装**，因为 Android 不允许用不同签名覆盖安装。
+            signingConfig = if (hasReleaseKeystore) {
+                signingConfigs.getByName("release")
+            } else {
+                logger.warn(
+                    "[ScoreTrack] 没找到 keystore.properties，release 包将使用 debug 签名 —— " +
+                        "这样的包不能发布，也不能覆盖安装正式版。"
+                )
+                signingConfigs.getByName("debug")
+            }
         }
     }
     compileOptions {

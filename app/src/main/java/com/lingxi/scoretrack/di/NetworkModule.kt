@@ -3,6 +3,7 @@ package com.lingxi.scoretrack.di
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import com.lingxi.scoretrack.BuildConfig
 import com.lingxi.scoretrack.data.remote.AiApi
+import com.lingxi.scoretrack.data.remote.GitHubApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -60,4 +61,12 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideAiApi(retrofit: Retrofit): AiApi = retrofit.create(AiApi::class.java)
+
+    /**
+     * 复用同一个 Retrofit —— 接口里用 @Url 传完整地址，
+     * 所以 baseUrl 指向哪儿都无所谓。
+     */
+    @Provides
+    @Singleton
+    fun provideGitHubApi(retrofit: Retrofit): GitHubApi = retrofit.create(GitHubApi::class.java)
 }

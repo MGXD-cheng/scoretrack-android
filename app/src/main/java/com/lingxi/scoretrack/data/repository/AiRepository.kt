@@ -62,16 +62,41 @@ class AiRepository @Inject constructor(
                     maxTokens = config.maxTokens
                 )
             )
-            response.choices.firstOrNull()?.message?.plainText
-                ?: throw IllegalStateException("模型返回内容为空")
+            val choice = response.choices.firstOrNull()
+            val text = choice?.message?.plainText
+            if (text.isNullOrBlank()) {
+                throw IllegalStateException(describeEmptyResponse(choice?.finishReason))
+            }
+            text
         }
+    }
+
+    /**
+     * 正文为空时，给一句**能照着做**的话。
+     *
+     * 起因是实测踩到的：DeepSeek V4 是推理模型，先写 `reasoning_content`
+     * 再写正文，两者共用 max_tokens。额度小时思考把额度吃光，正文是空字符串。
+     * 原来的提示只有「模型返回内容为空」—— 用户看到这句只会以为是 key 坏了，
+     * 然后去反复重填 Key。而真正该做的是把数字调大。
+     */
+    private fun describeEmptyResponse(finishReason: String?): String = when (finishReason) {
+        "length" ->
+            "模型把输出额度都用在了思考上，正文没写完。\n" +
+                "到「设置 → AI 配置」把「最大输出」调大（建议 4096 以上），再试一次。"
+        "content_filter" ->
+            "内容被服务端的安全策略拦下了。换个说法再试，或者换一个模型。"
+        else ->
+            "模型返回了空内容（finish_reason=${finishReason ?: "未知"}）。\n" +
+                "先点「测试连接」确认配置可用，再重试。"
     }
 
     /** 「测试连接」按钮：发一个最小请求确认配置可用 */
     suspend fun testConnection(config: AiModelConfig = configStore.textConfig()): Result<String> =
         chat(
             messages = listOf(ChatMessageDto.text(role = "user", text = "ping")),
-            config = config.copy(maxTokens = 16)
+            // 512 而不是 16：推理模型光是「想一下」就要几十个 token，
+            // 给小了正文必然是空的，测试连接会假失败
+            config = config.copy(maxTokens = 512)
         )
 
     /** 视觉模型的连通性测试：带一张 1×1 的图，确认多模态通道真的通 */
@@ -85,7 +110,8 @@ class AiRepository @Inject constructor(
                 imageDataUrl = TINY_PNG_DATA_URL
             )
         ),
-        config = config.copy(maxTokens = 16)
+        // 同上：16 会被推理吃光，连「ping」都回不来
+        config = config.copy(maxTokens = 512)
     )
 
     /**
@@ -146,7 +172,7 @@ class AiRepository @Inject constructor(
         }
 
     /**
-     * 从**文本**里提取成绩（CSV / Excel 导出的表格）。
+     * 从**文本**里提取成绩（CSV / Excel / Word 导出的表格）。
      *
      * 走文本模型：表格本身就是结构化数据，没必要浪费视觉模型的算力，
      * 而且文本通道更快、更便宜、也更准。

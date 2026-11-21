@@ -3,7 +3,7 @@ package com.lingxi.scoretrack.ui.screen.charts
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lingxi.scoretrack.data.repository.AnalysisReportRepository
-import com.lingxi.scoretrack.data.repository.AppSettingRepository
+import com.lingxi.scoretrack.domain.session.ProfileSession
 import com.lingxi.scoretrack.data.repository.ExamGoalRepository
 import com.lingxi.scoretrack.data.repository.ExamRepository
 import com.lingxi.scoretrack.data.repository.ScoreRepository
@@ -26,12 +26,12 @@ class ChartsViewModel @Inject constructor(
     private val examRepository: ExamRepository,
     private val scoreRepository: ScoreRepository,
     private val subjectRepository: SubjectRepository,
-    private val appSettingRepository: AppSettingRepository,
+    private val profileSession: ProfileSession,
     private val examGoalRepository: ExamGoalRepository,
     private val analysisReportRepository: AnalysisReportRepository
 ) : ViewModel() {
 
-    private val profileId = MutableStateFlow(0L)
+    private val profileId: StateFlow<Long> = profileSession.currentProfileId
 
     val uiState: StateFlow<ChartsUiState> = profileId
         .flatMapLatest { id ->
@@ -63,12 +63,4 @@ class ChartsViewModel @Inject constructor(
             initialValue = ChartsUiState()
         )
 
-    init {
-        viewModelScope.launch {
-            profileId.value = appSettingRepository.getLong(
-                AppSettingRepository.KEY_CURRENT_PROFILE_ID,
-                0L
-            )
-        }
-    }
 }

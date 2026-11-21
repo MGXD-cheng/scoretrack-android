@@ -21,6 +21,10 @@ interface QuestionDao {
     @Query("SELECT * FROM question WHERE id = :id")
     suspend fun getById(id: Long): QuestionEntity?
 
+    /** 同步合并用：同一张试卷里题号唯一 */
+    @Query("SELECT * FROM question WHERE paperId = :paperId AND number = :number LIMIT 1")
+    suspend fun findByPaperAndNumber(paperId: Long, number: String): QuestionEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(question: QuestionEntity): Long
 

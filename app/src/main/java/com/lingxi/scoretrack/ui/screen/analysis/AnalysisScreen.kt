@@ -33,8 +33,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material.icons.filled.List
 import com.lingxi.scoretrack.data.local.entity.AnalysisReportEntity
 import com.lingxi.scoretrack.ui.components.AppTopBar
+import com.lingxi.scoretrack.ui.components.EmptyState
 import com.lingxi.scoretrack.ui.util.formatDateTime
 
 @Composable
@@ -115,10 +117,10 @@ fun AnalysisScreen(
                     .padding(32.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "还没有诊断报告。\n录入几次成绩后，点上面的按钮生成第一份。",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                EmptyState(
+                    icon = Icons.Filled.List,
+                    title = "还没有诊断报告",
+                    description = "录入几次成绩之后，点上面的按钮生成第一份。"
                 )
             }
         } else {

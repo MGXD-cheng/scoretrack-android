@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lingxi.scoretrack.data.local.entity.AnalysisReportEntity
 import com.lingxi.scoretrack.data.repository.AnalysisReportRepository
-import com.lingxi.scoretrack.data.repository.AppSettingRepository
+import com.lingxi.scoretrack.domain.session.ProfileSession
 import com.lingxi.scoretrack.domain.usecase.GenerateAnalysisUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -23,11 +23,11 @@ import javax.inject.Inject
 @HiltViewModel
 class AnalysisViewModel @Inject constructor(
     private val analysisReportRepository: AnalysisReportRepository,
-    private val appSettingRepository: AppSettingRepository,
+    private val profileSession: ProfileSession,
     private val generateAnalysis: GenerateAnalysisUseCase
 ) : ViewModel() {
 
-    private val profileId = MutableStateFlow(0L)
+    private val profileId: StateFlow<Long> = profileSession.currentProfileId
 
     val reports: StateFlow<List<AnalysisReportEntity>> = profileId
         .flatMapLatest { id ->
@@ -44,15 +44,6 @@ class AnalysisViewModel @Inject constructor(
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            profileId.value = appSettingRepository.getLong(
-                AppSettingRepository.KEY_CURRENT_PROFILE_ID,
-                0L
-            )
-        }
-    }
 
     fun generate() {
         if (_isGenerating.value) return

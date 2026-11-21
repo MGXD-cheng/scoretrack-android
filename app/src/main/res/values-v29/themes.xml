@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    API 29+：手势导航条默认会加一层半透明遮罩，
+    在浅色背景上看起来像一条脏边，关掉。
+-->
+<resources>
+
+    <style name="Theme.ScoreTrack" parent="Theme.ScoreTrack.Base">
+        <item name="android:enforceNavigationBarContrast">false</item>
+        <item name="android:enforceStatusBarContrast">false</item>
+    </style>
+</resources>

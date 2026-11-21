@@ -20,6 +20,15 @@ interface AnalysisReportDao {
     @Query("SELECT * FROM analysis_report WHERE id = :id")
     suspend fun getById(id: Long): AnalysisReportEntity?
 
+    /** 同步合并用：(档案 + 生成时间) 视为同一份报告 */
+    @Query(
+        "SELECT * FROM analysis_report WHERE profileId = :profileId AND createdAt = :createdAt LIMIT 1"
+    )
+    suspend fun findByProfileAndCreatedAt(
+        profileId: Long,
+        createdAt: Long
+    ): AnalysisReportEntity?
+
     @Query("SELECT * FROM analysis_report WHERE id = :id")
     fun observeById(id: Long): Flow<AnalysisReportEntity?>
 

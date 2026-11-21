@@ -75,5 +75,17 @@ sealed class AppDestination(
         const val IMPORT = "import"
 
         const val ANALYSIS = "analysis"
+
+        /** 局域网同步 */
+        const val SYNC = "sync"
+
+        /** 科目设置（只作用于当前档案） */
+        const val SUBJECT_MANAGE = "subject_manage"
+
+        /** 多档案数据对比 */
+        const val PROFILE_COMPARE = "profile_compare"
+
+        /** 错题文本批量导入 */
+        const val MISTAKE_IMPORT = "mistake_import"
     }
 }

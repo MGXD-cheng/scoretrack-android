@@ -11,6 +11,8 @@ data class QuestionDraft(
     /** 0 表示新题 */
     val id: Long = 0L,
     val number: String = "",
+    /** 题型：选择题 / 填空题 / 解答题。空表示没标 */
+    val type: String = "",
     val fullScore: String = "",
     val score: String = "",
     val difficulty: String? = null,
@@ -40,3 +42,11 @@ data class QuestionDraft(
 
 /** 题型选项，和 ExamEditScreen 的类型选择保持一致的交互习惯 */
 val DIFFICULTY_OPTIONS = listOf("易", "中", "难")
+
+/**
+ * 题型。
+ *
+ * 这三个值是**存进数据库的稳定值**，不要随便改字 —— 改了之后老数据的
+ * 题型就对不上筛选条件了。界面上想显示别的叫法可以在 UI 层映射。
+ */
+val QUESTION_TYPE_OPTIONS = listOf("选择题", "填空题", "解答题")

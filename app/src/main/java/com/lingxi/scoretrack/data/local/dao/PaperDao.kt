@@ -18,6 +18,14 @@ interface PaperDao {
     @Query("SELECT * FROM paper WHERE examId = :examId AND subjectId = :subjectId LIMIT 1")
     suspend fun getByExamAndSubject(examId: Long, subjectId: Long): PaperEntity?
 
+    /** 同步导出用：某档案下的全部试卷 */
+    @Query(
+        "SELECT paper.* FROM paper " +
+            "INNER JOIN exam ON exam.id = paper.examId " +
+            "WHERE exam.profileId = :profileId"
+    )
+    suspend fun getByProfileOnce(profileId: Long): List<PaperEntity>
+
     @Query("SELECT * FROM paper WHERE id = :id")
     suspend fun getById(id: Long): PaperEntity?
 

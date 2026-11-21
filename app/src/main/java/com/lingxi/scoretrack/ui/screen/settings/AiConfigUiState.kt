@@ -11,7 +11,11 @@ data class AiModelForm(
     val apiKey: String = "",
     val modelName: String = "",
     val temperature: String = "0.3",
-    val maxTokens: String = "2048",
+    /**
+     * 最大输出。默认 4096 而不是 2048 —— 推理模型先写思考再写正文，
+     * 2048 在一张密一点的成绩单上会被思考吃掉大半，正文容易截断成半截 JSON。
+     */
+    val maxTokens: String = "4096",
     val enabled: Boolean = false
 ) {
     fun toConfig(): AiModelConfig = AiModelConfig(
@@ -19,7 +23,7 @@ data class AiModelForm(
         apiKey = apiKey.trim(),
         modelName = modelName.trim(),
         temperature = temperature.trim().toDoubleOrNull() ?: 0.3,
-        maxTokens = maxTokens.trim().toIntOrNull() ?: 2048,
+        maxTokens = maxTokens.trim().toIntOrNull() ?: 4096,
         enabled = enabled
     )
 

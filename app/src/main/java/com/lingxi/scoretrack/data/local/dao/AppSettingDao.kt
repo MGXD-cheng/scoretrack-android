@@ -19,6 +19,10 @@ interface AppSettingDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun put(setting: AppSettingEntity)
 
+    /** 全量读取。备份/同步导出设置时用。 */
+    @Query("SELECT * FROM app_setting")
+    suspend fun getAllOnce(): List<AppSettingEntity>
+
     @Query("DELETE FROM app_setting WHERE `key` = :key")
     suspend fun remove(key: String)
 }

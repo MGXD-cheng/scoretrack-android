@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import com.lingxi.scoretrack.data.file.DocumentExtractor
 import com.lingxi.scoretrack.util.CameraCapture
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,11 +27,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -45,6 +48,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lingxi.scoretrack.domain.model.DetectedStudent
 import com.lingxi.scoretrack.domain.model.RecognizedExam
 import com.lingxi.scoretrack.domain.model.RecognizedSubject
 import com.lingxi.scoretrack.ui.components.AppTopBar
@@ -143,9 +147,11 @@ fun ImportScreen(
             ImportStage.Preview -> state.preview?.let { exam ->
                 PreviewContent(
                     exam = exam,
+                    selectedStudentIndex = state.selectedStudentIndex,
                     isImporting = state.isImporting,
                     error = state.error,
                     onExamNameChange = viewModel::updateExamName,
+                    onSelectStudent = viewModel::selectStudent,
                     onScoreChange = viewModel::updateSubjectScore,
                     onFullScoreChange = viewModel::updateSubjectFullScore,
                     onRemoveSubject = viewModel::removeSubject,
@@ -157,6 +163,7 @@ fun ImportScreen(
 
             ImportStage.Done -> DoneContent(
                 examId = state.importedExamId,
+                autoCategorizeMessage = state.autoCategorizeMessage,
                 onOpenExam = onOpenExam,
                 onImportAnother = viewModel::backToIdle
             )
@@ -182,7 +189,7 @@ private fun IdleContent(
         Text(text = "导入成绩", style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "支持拍照 / 图片、PDF、CSV、Excel。\n" +
+            text = "支持拍照 / 图片、PDF、Word、CSV、Excel。\n" +
                 "AI 会自动提取考试名称、各科分数和错题。",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -199,7 +206,7 @@ private fun IdleContent(
         }
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedButton(onClick = onPickFile, modifier = Modifier.fillMaxWidth()) {
-            Text("选择文件（PDF / CSV / Excel）")
+            Text("选择文件（PDF / Word / CSV / Excel）")
         }
 
         if (error != null) {
@@ -222,7 +229,7 @@ private fun IdleContent(
 
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "图片 / PDF 走视觉模型，CSV / Excel 走文本模型 ——\n" +
+            text = "图片 / PDF 走视觉模型，Word / CSV / Excel 走文本模型 ——\n" +
                 "记得先在「设置 → AI 配置」里填好模型信息。",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -252,9 +259,11 @@ private fun RecognizingContent() {
 @Composable
 private fun PreviewContent(
     exam: RecognizedExam,
+    selectedStudentIndex: Int,
     isImporting: Boolean,
     error: String?,
     onExamNameChange: (String) -> Unit,
+    onSelectStudent: (Int) -> Unit,
     onScoreChange: (Int, String) -> Unit,
     onFullScoreChange: (Int, String) -> Unit,
     onRemoveSubject: (Int) -> Unit,
@@ -280,6 +289,17 @@ private fun PreviewContent(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+
+        // 只有一份文件里真的出现多个人时才显示 —— 单人成绩单不该多这一步
+        if (exam.detectedStudents.size > 1) {
+            item {
+                StudentPicker(
+                    students = exam.detectedStudents,
+                    selectedIndex = selectedStudentIndex,
+                    onSelect = onSelectStudent
+                )
+            }
         }
 
         item {
@@ -405,6 +425,7 @@ private fun SubjectEditRow(
 @Composable
 private fun DoneContent(
     examId: Long?,
+    autoCategorizeMessage: String?,
     onOpenExam: (Long) -> Unit,
     onImportAnother: () -> Unit
 ) {
@@ -422,6 +443,23 @@ private fun DoneContent(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+
+        // 自动归纳是异步跑的，可能这会儿还没回来 —— 回来了才显示
+        if (autoCategorizeMessage != null) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer
+                )
+            ) {
+                Text(
+                    text = autoCategorizeMessage,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
         Button(
             onClick = { examId?.let(onOpenExam) },
@@ -433,6 +471,55 @@ private fun DoneContent(
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedButton(onClick = onImportAnother, modifier = Modifier.fillMaxWidth()) {
             Text("再导入一张")
+        }
+    }
+}
+
+/**
+ * 多人成绩文件里的「导入谁」选择器。
+ *
+ * 横向滚动而不是换行：一个班可能几十个人，**让几十个 chip 换行会把
+ * 确认页顶到看不见下面的分数**，而分数才是用户真正要核对的东西。
+ *
+ * 只在 `detectedStudents.size > 1` 时才被调用 —— 单人成绩单完全不会
+ * 见到这个控件，那才是绝大多数情况。
+ */
+@Composable
+private fun StudentPicker(
+    students: List<DetectedStudent>,
+    selectedIndex: Int,
+    onSelect: (Int) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = "这份文件里有 ${students.size} 个人的成绩",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = "选择要导入的那一个，其他人的成绩不会被写入",
+                style = MaterialTheme.typography.bodySmall
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                students.forEachIndexed { index, student ->
+                    FilterChip(
+                        selected = index == selectedIndex,
+                        onClick = { onSelect(index) },
+                        label = { Text(student.name) }
+                    )
+                }
+            }
         }
     }
 }

@@ -36,5 +36,14 @@ class AppSettingRepository @Inject constructor(
     companion object {
         const val KEY_CURRENT_PROFILE_ID = "current_profile_id"
         const val KEY_FIRST_LAUNCH = "first_launch"
+
+        /**
+         * 导入错题后是否自动让 AI 归纳知识点。
+         *
+         * **默认关**。AI 调用要花钱，而且导入时用户往往只想赶紧看到
+         * 「导入完成」—— 自动替用户花钱不是个友好的默认值。
+         * 想要的人到设置里打开就行。
+         */
+        const val KEY_AUTO_KNOWLEDGE = "auto_knowledge_categorize"
     }
 }

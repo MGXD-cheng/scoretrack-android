@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android 13+ 主题图标（Monochrome）。
+
+    系统只取 **alpha 通道**当形状，再套用户选的主题色，所以填什么颜色都无所谓。
+
+    造型和 foreground 保持一致（去掉基线后两者本来就一样了，但这里仍然
+    独立一份 —— 将来给 foreground 加装饰元素时，主题图标不该跟着变复杂）。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:pathData="M30,71 L52,58 L76,34"
+        android:strokeWidth="8"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+
+    <path
+        android:pathData="M76,34 m-7.5,0 a7.5,7.5 0 1,0 15,0 a7.5,7.5 0 1,0 -15,0"
+        android:fillColor="#FFFFFF" />
+</vector>

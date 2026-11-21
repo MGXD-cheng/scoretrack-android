@@ -3,6 +3,7 @@ package com.lingxi.scoretrack.ui.screen.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lingxi.scoretrack.data.repository.AiRepository
+import com.lingxi.scoretrack.domain.model.AiModelConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -63,8 +64,8 @@ class AiConfigViewModel @Inject constructor(
     fun resetTextToDefault() {
         _uiState.update {
             it.copy(text = AiModelForm.from(aiRepository.textConfig()).copy(
-                baseUrl = "https://api.deepseek.com",
-                modelName = "deepseek-chat"
+                baseUrl = AiModelConfig.DEFAULT_TEXT_BASE_URL,
+                modelName = AiModelConfig.DEFAULT_TEXT_MODEL
             ))
         }
     }

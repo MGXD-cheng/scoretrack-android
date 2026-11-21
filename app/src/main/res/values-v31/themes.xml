@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    API 31+：启动画面（Splash Screen）。
+
+    **必须包含 v29 的那两条** —— Android 挑的是「最匹配的那个目录」，
+    v31 设备只会读这个文件，不会再去合并 v29。漏了的话手势条遮罩
+    会在新手机上重新冒出来。
+
+    背景用品牌蓝而不是应用图标：冷启动那一瞬间看到一块纯色，
+    比看到一个居中的小图标更稳，也更像「一个应用的开始」。
+-->
+<resources>
+
+    <style name="Theme.ScoreTrack" parent="Theme.ScoreTrack.Base">
+        <item name="android:enforceNavigationBarContrast">false</item>
+        <item name="android:enforceStatusBarContrast">false</item>
+        <item name="android:windowSplashScreenBackground">@color/brand_primary</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+    </style>
+</resources>

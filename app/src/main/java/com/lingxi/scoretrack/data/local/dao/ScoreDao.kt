@@ -18,6 +18,14 @@ interface ScoreDao {
     @Query("SELECT * FROM score WHERE examId = :examId")
     suspend fun getByExam(examId: Long): List<ScoreEntity>
 
+    /** 同步导出用：一次拿全某档案下的所有成绩，避免逐个考试查（N+1） */
+    @Query(
+        "SELECT score.* FROM score " +
+            "INNER JOIN exam ON exam.id = score.examId " +
+            "WHERE exam.profileId = :profileId"
+    )
+    suspend fun getByProfileOnce(profileId: Long): List<ScoreEntity>
+
     @Query("SELECT * FROM score WHERE examId = :examId AND subjectId = :subjectId LIMIT 1")
     suspend fun getByExamAndSubject(examId: Long, subjectId: Long): ScoreEntity?
 

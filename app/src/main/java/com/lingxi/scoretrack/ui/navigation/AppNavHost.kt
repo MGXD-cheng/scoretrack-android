@@ -13,20 +13,23 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.lingxi.scoretrack.ui.components.AppBottomBar
-import com.lingxi.scoretrack.ui.components.PlaceholderScreen
 import com.lingxi.scoretrack.ui.screen.analysis.AnalysisDetailScreen
 import com.lingxi.scoretrack.ui.screen.analysis.AnalysisScreen
 import com.lingxi.scoretrack.ui.screen.exam.ExamEditScreen
 import com.lingxi.scoretrack.ui.screen.goal.GoalEditScreen
 import com.lingxi.scoretrack.ui.screen.home.HomeScreen
+import com.lingxi.scoretrack.ui.screen.compare.ProfileCompareScreen
 import com.lingxi.scoretrack.ui.screen.importsheet.ImportScreen
 import com.lingxi.scoretrack.ui.screen.knowledge.KnowledgeScreen
 import com.lingxi.scoretrack.ui.screen.mistakes.MistakeDetailScreen
+import com.lingxi.scoretrack.ui.screen.mistakes.MistakeImportScreen
 import com.lingxi.scoretrack.ui.screen.mistakes.MistakesScreen
 import com.lingxi.scoretrack.ui.screen.paper.PaperEditScreen
 import com.lingxi.scoretrack.ui.screen.scores.ScoresScreen
 import com.lingxi.scoretrack.ui.screen.settings.AiConfigScreen
 import com.lingxi.scoretrack.ui.screen.settings.SettingsScreen
+import com.lingxi.scoretrack.ui.screen.subject.SubjectManageScreen
+import com.lingxi.scoretrack.ui.screen.sync.SyncScreen
 
 /**
  * 应用导航宿主。底部 4 个 Tab，二级页后续分批接入。
@@ -120,6 +123,9 @@ fun AppNavHost(
                     },
                     onOpenKnowledge = {
                         navController.navigate(AppDestination.KNOWLEDGE)
+                    },
+                    onOpenImport = {
+                        navController.navigate(AppDestination.MISTAKE_IMPORT)
                     }
                 )
             }
@@ -179,8 +185,33 @@ fun AppNavHost(
                     },
                     onOpenImport = {
                         navController.navigate(AppDestination.IMPORT_SCREEN)
+                    },
+                    onOpenSync = {
+                        navController.navigate(AppDestination.SYNC)
+                    },
+                    onOpenSubjects = {
+                        navController.navigate(AppDestination.SUBJECT_MANAGE)
+                    },
+                    onOpenCompare = {
+                        navController.navigate(AppDestination.PROFILE_COMPARE)
                     }
                 )
+            }
+
+            composable(AppDestination.SUBJECT_MANAGE) {
+                SubjectManageScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(AppDestination.PROFILE_COMPARE) {
+                ProfileCompareScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(AppDestination.MISTAKE_IMPORT) {
+                MistakeImportScreen(onBack = { navController.popBackStack() })
+            }
+
+            composable(AppDestination.SYNC) {
+                SyncScreen(onBack = { navController.popBackStack() })
             }
 
             composable(AppDestination.AI_CONFIG) {

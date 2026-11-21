@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android 9（API 28）起默认禁止明文 HTTP，局域网同步走的是
+    http://192.168.x.x，不开这个开关会直接连不上。
+
+    为什么用 base-config 全局放开，而不是只列举对端 IP：
+    对方的 IP 是 DHCP 动态分配的（今天 192.168.1.5，明天可能是 .9），
+    而且 network-security-config 的 <domain> 不支持通配符和网段。
+    事前根本写不出来。
+
+    实际的暴露面很小：
+    - 本 App 发出的 HTTP 请求只有两类：AI 接口（HTTPS）和局域网同步
+    - AI 接口如果用户在配置里填了 http:// 开头的地址，本身就连不上
+    - 局域网同步只监听用户主动开启的那几分钟
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

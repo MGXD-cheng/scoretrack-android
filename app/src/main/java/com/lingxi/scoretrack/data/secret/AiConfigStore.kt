@@ -65,8 +65,9 @@ class AiConfigStore @Inject constructor(
         modelName = prefs.getString(prefix + KEY_MODEL, "").orEmpty(),
         temperature = prefs.getString(prefix + KEY_TEMPERATURE, "0.3")
             ?.toDoubleOrNull() ?: 0.3,
-        maxTokens = prefs.getString(prefix + KEY_MAX_TOKENS, "2048")
-            ?.toIntOrNull() ?: 2048,
+        // 默认值与 AiModelConfig.maxTokens 保持一致（推理模型需要更大的输出额度）
+        maxTokens = prefs.getString(prefix + KEY_MAX_TOKENS, "4096")
+            ?.toIntOrNull() ?: 4096,
         enabled = prefs.getBoolean(prefix + KEY_ENABLED, false)
     )
 

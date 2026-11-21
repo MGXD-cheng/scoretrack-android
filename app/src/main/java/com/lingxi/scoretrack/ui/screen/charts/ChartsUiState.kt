@@ -22,6 +22,23 @@ data class RatePoint(
     val rate: Float
 )
 
+/** 饼图的一片：某科目在最近一次考试里的失分 */
+data class LossSlice(
+    val subjectName: String,
+    val loss: Float
+)
+
+/**
+ * 热力图的一行：一个科目在历次考试中的得分率。
+ *
+ * [rates] 里的 null 表示那次考试**这一科没录成绩** —— 和「考了 0 分」
+ * 必须区分开：前者画灰格子，后者画红格子。
+ */
+data class HeatRow(
+    val subjectName: String,
+    val rates: List<Float?>
+)
+
 data class ChartsUiState(
     val isLoading: Boolean = true,
     val exams: List<ExamEntity> = emptyList(),
@@ -61,8 +78,108 @@ data class ChartsUiState(
             }
         }
 
+    /**
+     * 雷达图上的目标线：各科的「目标得分率」，与 [latestRatePoints] 的科目
+     * **一一对应**（同样的遍历顺序、同样的过滤条件）—— 雷达图的两个数据集
+     * 必须共用同一套轴标签，长度差一个就会整体错位。
+     *
+     * 没设目标的科目沿用实际值，两条线在那里自然重合。这是刻意的：
+     * **宁可让线重合，也不凭空编一个目标分** —— 雷达图上凭空凹下去一块，
+     * 比线重合要误导得多。
+     */
+    val latestTargetPoints: List<RatePoint>
+        get() {
+            if (subjectGoals.isEmpty()) return emptyList()
+            val latest = exams.maxByOrNull { it.date } ?: return emptyList()
+            val scores = scoresByExam[latest.id].orEmpty()
+            val goalBySubjectId = subjectGoals.associate { (subject, goal) -> subject.id to goal }
+
+            return subjects.mapNotNull { subject ->
+                val score = scores.firstOrNull { it.subjectId == subject.id }
+                    ?: return@mapNotNull null
+                val goal = goalBySubjectId[subject.id]
+
+                // 目标分按**科目满分**折算 —— 目标是在「这门课满分多少」的口径下
+                // 填的，而当次考试的满分可能不一样（比如小测只算 100 分）
+                val fullForGoal = subject.fullScore.takeIf { it > 0f } ?: score.fullScore
+
+                RatePoint(
+                    subjectName = subject.name,
+                    rate = if (goal != null) {
+                        scoreRate(goal.targetScore, fullForGoal)
+                    } else {
+                        scoreRate(score.score, score.fullScore)
+                    }
+                )
+            }
+        }
+
     val latestExamName: String
         get() = exams.maxByOrNull { it.date }?.name.orEmpty()
+
+    // ---------- 饼图：失分构成 ----------
+
+    /**
+     * 最近一次考试各科的失分（满分 - 得分），按失分从多到少排序。
+     *
+     * 满分（失分 0）的科目不进饼图 —— 饼图讲的是「分丢在哪了」，
+     * 掺进一片 0 只会让图例变长、占比被稀释。
+     */
+    val latestLossSlices: List<LossSlice>
+        get() {
+            val latest = exams.maxByOrNull { it.date } ?: return emptyList()
+            val scores = scoresByExam[latest.id].orEmpty()
+            return subjects
+                .mapNotNull { subject ->
+                    val score = scores.firstOrNull { it.subjectId == subject.id }
+                        ?: return@mapNotNull null
+                    val loss = score.fullScore - score.score
+                    if (loss <= 0f) return@mapNotNull null
+                    LossSlice(subjectName = subject.name, loss = loss)
+                }
+                .sortedByDescending { it.loss }
+        }
+
+    // ---------- 热力图：科目 × 考试 ----------
+
+    /**
+     * 热力图矩阵：行 = 科目，列 = 最近 [MAX_HEAT_EXAMS] 次考试。
+     *
+     * 列按时间**升序**（左边最早、右边最近），因为读的趋势是从左往右，
+     * 跟折线图保持一致。
+     */
+    val heatMap: List<HeatRow>
+        get() {
+            val recent = recentExamsForHeat
+            if (recent.isEmpty()) return emptyList()
+            return subjects
+                .map { subject ->
+                    HeatRow(
+                        subjectName = subject.name,
+                        rates = recent.map { exam ->
+                            scoresByExam[exam.id]
+                                .orEmpty()
+                                .firstOrNull { it.subjectId == subject.id }
+                                ?.let { scoreRate(it.score, it.fullScore) }
+                        }
+                    )
+                }
+                // 一次成绩都没有的科目整行不显示：一行纯灰既占地方又不带信息。
+                // 行内仍保留零星灰格 —— 那是「这次没考」，跟「整科没数据」不是一回事。
+                .filter { row -> row.rates.any { it != null } }
+        }
+
+    /** 热力图的列标题，跟 [heatMap] 每行的 rates 一一对应 */
+    val heatExamLabels: List<String>
+        get() = recentExamsForHeat.map { it.name }
+
+    /** 热力图只画最近几次考试 —— 再多格子就挤成一条线了 */
+    private val recentExamsForHeat: List<ExamEntity>
+        get() = exams.sortedBy { it.date }.takeLast(MAX_HEAT_EXAMS)
+
+    private companion object {
+        const val MAX_HEAT_EXAMS = 6
+    }
 
     // ---------- 考试目标 ----------
 

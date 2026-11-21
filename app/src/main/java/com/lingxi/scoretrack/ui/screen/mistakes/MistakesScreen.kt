@@ -32,6 +32,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lingxi.scoretrack.data.local.model.MistakeDetailRow
 import com.lingxi.scoretrack.ui.components.AppTopBar
+import com.lingxi.scoretrack.ui.theme.ColorError
+import com.lingxi.scoretrack.ui.theme.ColorSuccess
+import com.lingxi.scoretrack.ui.theme.ColorWarning
 import com.lingxi.scoretrack.ui.util.formatDate
 import androidx.compose.material3.TextButton
 
@@ -39,6 +42,7 @@ import androidx.compose.material3.TextButton
 fun MistakesScreen(
     onOpenDetail: (Long) -> Unit,
     onOpenKnowledge: () -> Unit,
+    onOpenImport: () -> Unit,
     viewModel: MistakesViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -47,6 +51,7 @@ fun MistakesScreen(
         AppTopBar(
             title = "错题本",
             actions = {
+                TextButton(onClick = onOpenImport) { Text("导入") }
                 TextButton(onClick = onOpenKnowledge) { Text("知识点") }
             }
         )
@@ -239,10 +244,13 @@ private fun MistakeCard(
 
 @Composable
 private fun ReviewStatusBadge(status: String) {
+    // 用主题里的语义色，而不是就地手写十六进制 ——
+    // 这三个绿/黄/红在 Color.kt 里已经定义过一遍，重复写死的结果是
+    // 将来调色时总会漏掉某处（而且刚才确实是漏的）。
     val color = when (status) {
-        "已掌握" -> Color(0xFF22C55E)
-        "复习中" -> Color(0xFFF59E0B)
-        else -> Color(0xFFEF4444)
+        "已掌握" -> ColorSuccess
+        "复习中" -> ColorWarning
+        else -> ColorError
     }
 
     Card(

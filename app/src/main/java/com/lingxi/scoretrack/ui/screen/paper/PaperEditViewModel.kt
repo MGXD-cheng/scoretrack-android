@@ -83,6 +83,9 @@ class PaperEditViewModel @Inject constructor(
                         QuestionDraft(
                             id = question.id,
                             number = question.number,
+                            // 之前漏了这一行 —— 库里存了题型，编辑页却读不出来，
+                            // 用户一保存就被写成 null，题型等于每次编辑都被清空
+                            type = question.type.orEmpty(),
                             fullScore = formatScore(question.fullScore),
                             score = formatScore(question.score),
                             difficulty = question.difficulty,

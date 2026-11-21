@@ -48,8 +48,15 @@ class CommitRecognizedExamUseCase @Inject constructor(
         result: RecognizeResult,
         sourceType: String = "photo",
         sourceFileUrl: String? = null,
-        /** 原始文件类型：image / pdf / csv / xlsx，记录在 import_task 里便于追溯 */
-        fileType: String = "image"
+        /** 原始文件类型：image / pdf / csv / xlsx / docx，记录在 import_task 里便于追溯 */
+        fileType: String = "image",
+        /**
+         * 多人文件里用户最终选中的学生名；单人文件为 null。
+         *
+         * 存下来是为了排查时能区分「AI 提取错了」和「用户选错人了」——
+         * 这两个问题看起来一模一样，但修法完全不同。
+         */
+        filterTarget: String? = null
     ): Long = database.withTransaction {
         val recognized = result.exam
         val now = System.currentTimeMillis()
@@ -127,7 +134,8 @@ class CommitRecognizedExamUseCase @Inject constructor(
                 importType = "exam_sheet",
                 status = "已完成",
                 aiRawResult = result.rawResponse,
-                confirmedResult = recognized.examName
+                confirmedResult = recognized.examName,
+                filterTarget = filterTarget
             )
         )
 

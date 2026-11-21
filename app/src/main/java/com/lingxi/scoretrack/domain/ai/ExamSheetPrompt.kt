@@ -1,7 +1,9 @@
 package com.lingxi.scoretrack.domain.ai
 
+import com.lingxi.scoretrack.domain.model.DetectedStudent
 import com.lingxi.scoretrack.domain.model.RawRecognizedExam
 import com.lingxi.scoretrack.domain.model.RawRecognizedQuestion
+import com.lingxi.scoretrack.domain.model.RawRecognizedStudent
 import com.lingxi.scoretrack.domain.model.RawRecognizedSubject
 import com.lingxi.scoretrack.domain.model.RecognizedExam
 import com.lingxi.scoretrack.domain.model.RecognizedQuestion
@@ -28,21 +30,26 @@ object ExamSheetPrompt {
         {
           "examName": "考试名称，如 高二上期中考试",
           "examDate": "yyyy-MM-dd，识别不到则 null",
-          "subjects": [
+          "students": [
             {
-              "subjectName": "科目名，如 数学",
-              "score": 128,
-              "fullScore": 150,
-              "questions": [
+              "name": "学生姓名，看不出则 null",
+              "subjects": [
                 {
-                  "number": "题号，如 18",
-                  "content": "题干（若能看清）",
-                  "userAnswer": "学生的作答",
-                  "correctAnswer": "正确答案",
-                  "wrongReason": "错因（若图片中有批注）",
-                  "score": 4,
-                  "fullScore": 12,
-                  "difficulty": "易/中/难（识别不到则 null）"
+                  "subjectName": "科目名，如 数学",
+                  "score": 128,
+                  "fullScore": 150,
+                  "questions": [
+                    {
+                      "number": "题号，如 18",
+                      "content": "题干（若能看清）",
+                      "userAnswer": "学生的作答",
+                      "correctAnswer": "正确答案",
+                      "wrongReason": "错因（若图片中有批注）",
+                      "score": 4,
+                      "fullScore": 12,
+                      "difficulty": "易/中/难（识别不到则 null）"
+                    }
+                  ]
                 }
               ]
             }
@@ -54,6 +61,12 @@ object ExamSheetPrompt {
         - 满分识别不到时：语文/数学/英语按 150，其他科目按 100 估计。
         - questions 只收录**做错的题**；如果图片里没有逐题信息，questions 返回空数组。
         - 看不清的内容一律填 null，**不要编造**。
+
+        关于 students 字段（重要）：
+        - 一张成绩单上**只有一个人**时，students 里就只放这一项。
+        - 只有**班级成绩表 / 多人成绩汇总**这种确实出现多个人名的情况，才放多项。
+        - **有几项就必须对应几个真实出现的人**，不要为了凑数凭空造人。
+        - 名字看不清或根本没有名字，name 填 null，**不要猜**。
     """.trimIndent()
 
     const val USER = "请识别这张成绩单，按约定输出 JSON。"
@@ -67,7 +80,7 @@ object ExamSheetPrompt {
      */
     val TEXT_SYSTEM: String = """
         你是一个成绩单结构化助手。用户会给你一份成绩单的**文本内容**
-        （通常来自 CSV 或 Excel 导出）。
+        （通常来自 CSV、Excel 或 Word 导出）。
 
         内容格式：每行一条记录，列之间用 `|` 分隔，第一行通常是表头。
 
@@ -77,12 +90,17 @@ object ExamSheetPrompt {
         {
           "examName": "考试名称；若文本里没有，根据表头或上下文合理命名，如 成绩表导入",
           "examDate": "yyyy-MM-dd，识别不到则 null",
-          "subjects": [
+          "students": [
             {
-              "subjectName": "科目名",
-              "score": 128,
-              "fullScore": 150,
-              "questions": []
+              "name": "学生姓名，看不出则 null",
+              "subjects": [
+                {
+                  "subjectName": "科目名",
+                  "score": 128,
+                  "fullScore": 150,
+                  "questions": []
+                }
+              ]
             }
           ]
         }
@@ -96,6 +114,13 @@ object ExamSheetPrompt {
         - 文本成绩表通常没有逐题信息，questions 一律给空数组。
         - 跳过表头行、合计行、空行，**不要把表头当成一个科目**。
         - 看不清或没有的内容填 null，**不要编造**。
+
+        关于 students 字段（重要）：
+        - 表格里**有「姓名 / 学生 / 名字」这类列**时，按人拆成多项，
+          同一个人的各科成绩归到同一个 students 项下。
+        - 表格里**没有姓名列**（就是一个人各科一行），
+          那就只放**一项**，name 填 null。
+        - 只认表格里真实出现的人，**不要凭学科名或其它内容造人**。
     """.trimIndent()
 
     val TEXT_USER = "请识别下面这份成绩数据，按约定输出 JSON：\n\n"
@@ -149,13 +174,39 @@ object RecognizedExamParser {
     }
 
     private fun RawRecognizedExam.toDomain(): RecognizedExam? {
-        val mappedSubjects = subjects.mapNotNull { it.toDomain() }
-        if (mappedSubjects.isEmpty()) return null
+        val parsedStudents = students.mapIndexedNotNull { index, raw -> raw.toDomain(index) }
+        val singleSubjects = subjects.mapNotNull { it.toDomain() }
+
+        // 优先用 students（新提示词）；模型漏了这层就退回 subjects（旧格式 / 偷懒）
+        val chosen = if (parsedStudents.isNotEmpty()) {
+            parsedStudents.first().subjects
+        } else {
+            singleSubjects
+        }
+        if (chosen.isEmpty()) return null
 
         return RecognizedExam(
             examName = examName?.takeIf { it.isNotBlank() } ?: "未命名考试",
             examDate = normalizeDate(examDate),
-            subjects = mappedSubjects
+            subjects = chosen,
+            // 只有**真的多于一个人**才把候选名单挂出去。单个学生是常态，
+            // 不该为了它在 UI 上多一层选择 —— 那会拖慢 99% 的使用路径。
+            detectedStudents = if (parsedStudents.size > 1) parsedStudents else emptyList()
+        )
+    }
+
+    private fun RawRecognizedStudent.toDomain(index: Int): DetectedStudent? {
+        val mapped = subjects.mapNotNull { it.toDomain() }
+        if (mapped.isEmpty()) return null
+
+        return DetectedStudent(
+            // 没名字的占位成「学生 N」：UI 上总要有个能点的东西，
+            // 空字符串会显示成一个空白选项，用户不知道那是什么
+            name = (name ?: studentName)
+                ?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: "学生 ${index + 1}",
+            subjects = mapped
         )
     }
 

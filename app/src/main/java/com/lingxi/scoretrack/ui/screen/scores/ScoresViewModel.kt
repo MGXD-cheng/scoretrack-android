@@ -3,7 +3,7 @@ package com.lingxi.scoretrack.ui.screen.scores
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lingxi.scoretrack.data.local.entity.ExamEntity
-import com.lingxi.scoretrack.data.repository.AppSettingRepository
+import com.lingxi.scoretrack.domain.session.ProfileSession
 import com.lingxi.scoretrack.data.repository.ExamRepository
 import com.lingxi.scoretrack.data.repository.ScoreRepository
 import com.lingxi.scoretrack.data.repository.SubjectRepository
@@ -12,6 +12,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -25,10 +26,10 @@ class ScoresViewModel @Inject constructor(
     private val examRepository: ExamRepository,
     private val scoreRepository: ScoreRepository,
     private val subjectRepository: SubjectRepository,
-    private val appSettingRepository: AppSettingRepository
+    private val profileSession: ProfileSession
 ) : ViewModel() {
 
-    private val profileId = MutableStateFlow(0L)
+    private val profileId: StateFlow<Long> = profileSession.currentProfileId
 
     val uiState: StateFlow<ScoresUiState> = profileId
         .flatMapLatest { id ->
@@ -55,16 +56,42 @@ class ScoresViewModel @Inject constructor(
             initialValue = ScoresUiState()
         )
 
-    init {
+    // ---------- 删除考试 ----------
+    // 走二次确认。理由不是「怕误触」这么表面 —— 而是删除会在一个事务里
+    // 连带清掉这场考试下面的试卷、题目、错题、知识点关联，用户完全看不到
+    // 这条链。所以确认框必须先把数字摆出来，让人知道自己在删什么。
+
+    private val _deleteTarget = MutableStateFlow<ExamEntity?>(null)
+
+    /** 待确认删除的考试，非空时弹确认框 */
+    val deleteTarget: StateFlow<ExamEntity?> = _deleteTarget.asStateFlow()
+
+    private val _deleteCascade = MutableStateFlow<ExamRepository.ExamCascadeCount?>(null)
+
+    /**
+     * 待删考试会连带删掉的附属数据量。
+     *
+     * 单独一个流、可变可空：统计是异步查出来的，界面要能显示「正在算」，
+     * 而不是先编一个 0 出来让用户以为没有附属数据。
+     */
+    val deleteCascade: StateFlow<ExamRepository.ExamCascadeCount?> = _deleteCascade.asStateFlow()
+
+    fun requestDelete(exam: ExamEntity) {
+        _deleteTarget.value = exam
+        _deleteCascade.value = null
         viewModelScope.launch {
-            profileId.value = appSettingRepository.getLong(
-                AppSettingRepository.KEY_CURRENT_PROFILE_ID,
-                0L
-            )
+            _deleteCascade.value = examRepository.countCascade(exam.id)
         }
     }
 
-    fun deleteExam(exam: ExamEntity) {
-        viewModelScope.launch { examRepository.delete(exam) }
+    fun cancelDelete() {
+        _deleteTarget.value = null
+        _deleteCascade.value = null
+    }
+
+    fun confirmDelete() {
+        val target = _deleteTarget.value ?: return
+        cancelDelete()
+        viewModelScope.launch { examRepository.deleteWithCascade(target) }
     }
 }

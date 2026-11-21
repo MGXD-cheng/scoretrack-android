@@ -1,10 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    API 27 就能用的那部分主题属性。
+
+    parent 是 android:Theme.Material 而不是 Theme.Material3 ——
+    项目没引入 com.google.android.material 这个 View 体系的库，界面全是 Compose。
+    真正的颜色定义在 ui/theme/Theme.kt 的 colorScheme 里，这个 XML 主题
+    只负责「第一个 Compose 帧画出来之前」的那一小段时间。
+
+    更高 API 才支持的属性拆在 values-v29 / values-v31 里 ——
+    直接写在这里 Lint 会报 NewApi error（minSdk 是 27）。
+-->
 <resources>
 
-    <style name="Theme.ScoreTrack" parent="android:Theme.Material.Light.NoActionBar">
+    <style name="Theme.ScoreTrack.Base" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@color/app_background</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
     </style>
+
+    <style name="Theme.ScoreTrack" parent="Theme.ScoreTrack.Base" />
 </resources>

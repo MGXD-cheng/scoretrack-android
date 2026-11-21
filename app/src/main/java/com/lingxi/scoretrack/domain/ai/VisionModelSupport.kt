@@ -11,14 +11,17 @@ package com.lingxi.scoretrack.domain.ai
  * 为什么值得维护第 1 条：只靠「名字里有没有 vision」是运气。
  * 模型命名千奇百怪，猜错一次的代价是用户对着一张成绩单反复重试。
  *
- * ⚠️ 名单需要跟着服务商更新。写这个文件时（2026-10）的依据：
- * DeepSeek 于 2026-08-21 上线了 `deepseek-v4-flash-vision-exp`。
+ * ⚠️ 名单需要跟着服务商更新。最近一次核对（2026-11-21，直接从
+ * `GET https://api.deepseek.com/models` 的 `input_modalities` 读的）：
+ * 现有两个模型 —— `deepseek-flash`（text + image）、`deepseek-v4-pro`（text）。
+ * 旧的 `deepseek-v4-flash-vision-exp` 已经不在列表里了。
  */
 object VisionModelSupport {
-
     /** 明确支持图片输入 */
     private val KNOWN_VISION_PREFIXES = listOf(
-        // DeepSeek：2026-08 上线，与 V4-Flash 同价，同地址同 key
+        // DeepSeek：目前能读图的只有 flash（V4.1-Flash，1M 上下文）
+        "deepseek-flash",
+        // 旧名，服务端还会把它重定向到 flash，但别拿它当首选
         "deepseek-v4-flash-vision",
         "deepseek-vl",
         // OpenAI
@@ -51,6 +54,9 @@ object VisionModelSupport {
 
     /** 明确**不支持**图片输入 */
     private val TEXT_ONLY_PREFIXES = listOf(
+        // DeepSeek：v4-pro 是纯文本推理模型，名字里有个「v4」很容易被
+        // 名字里有没有 vision 的粗判断放过，必须显式列进来
+        "deepseek-v4-pro",
         "deepseek-chat",
         "deepseek-reasoner",
         "deepseek-coder",

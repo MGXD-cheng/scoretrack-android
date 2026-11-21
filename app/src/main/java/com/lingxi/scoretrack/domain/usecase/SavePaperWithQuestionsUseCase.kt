@@ -97,7 +97,9 @@ class SavePaperWithQuestionsUseCase @Inject constructor(
         id = id,
         paperId = paperId,
         number = number.ifBlank { "-" },
-        type = null,
+        // 之前这里一直写死 null —— QuestionEntity.type 有字段、错题详情也在读，
+        // 但从来没有值被写进去过。题型分类之所以是空的，根因就在这一行。
+        type = type.takeIf { it.isNotBlank() },
         fullScore = fullScoreValue,
         score = scoreValue,
         difficulty = difficulty,

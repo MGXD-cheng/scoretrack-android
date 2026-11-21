@@ -2,7 +2,7 @@ package com.lingxi.scoretrack.ui.screen.mistakes
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.lingxi.scoretrack.data.repository.AppSettingRepository
+import com.lingxi.scoretrack.domain.session.ProfileSession
 import com.lingxi.scoretrack.data.repository.MistakeRepository
 import com.lingxi.scoretrack.data.repository.SubjectRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,10 +23,10 @@ import javax.inject.Inject
 class MistakesViewModel @Inject constructor(
     private val mistakeRepository: MistakeRepository,
     private val subjectRepository: SubjectRepository,
-    private val appSettingRepository: AppSettingRepository
+    private val profileSession: ProfileSession
 ) : ViewModel() {
 
-    private val profileId = MutableStateFlow(0L)
+    private val profileId: StateFlow<Long> = profileSession.currentProfileId
     private val filter = MutableStateFlow(MistakeFilter.All)
 
     val uiState: StateFlow<MistakesUiState> = combine(
@@ -53,15 +53,6 @@ class MistakesViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = MistakesUiState()
     )
-
-    init {
-        viewModelScope.launch {
-            profileId.value = appSettingRepository.getLong(
-                AppSettingRepository.KEY_CURRENT_PROFILE_ID,
-                0L
-            )
-        }
-    }
 
     fun setFilter(value: MistakeFilter) {
         filter.update { value }

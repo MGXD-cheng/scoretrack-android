@@ -28,9 +28,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
 import com.lingxi.scoretrack.data.local.entity.QuestionEntity
 import com.lingxi.scoretrack.data.local.model.KnowledgePointRow
 import com.lingxi.scoretrack.ui.components.AppTopBar
+import com.lingxi.scoretrack.ui.components.EmptyStateCompact
 import com.lingxi.scoretrack.ui.util.formatScore
 
 /**
@@ -165,20 +168,14 @@ private fun EmptyHint() {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "还没有知识点",
-                style = MaterialTheme.typography.titleSmall
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = "错题本里攒几道错题之后，点右上角「AI 归纳」，" +
-                    "模型会替你整理出知识点并给每道题归类。\n" +
-                    "也可以直接打开一道错题，手动给它挂上知识点。",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        EmptyStateCompact(
+            icon = Icons.Filled.Star,
+            title = "还没有知识点",
+            description = "错题本里攒几道错题之后，点右上角「AI 归纳」，" +
+                "模型会替你整理出知识点并给每道题归类。\n" +
+                "也可以直接打开一道错题，手动给它挂上知识点。",
+            modifier = Modifier.padding(16.dp)
+        )
     }
 }
 
