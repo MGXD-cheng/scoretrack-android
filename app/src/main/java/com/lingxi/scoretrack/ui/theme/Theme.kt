@@ -16,7 +16,7 @@ import androidx.compose.ui.graphics.Color
  *
  * 改这个文件时建议顺手 grep 一下 colorScheme. 的用法，确认没有角色漏网。
  */
-private val LightColors = lightColorScheme(
+internal val LightColors = lightColorScheme(
     primary = BrandPrimary,
     onPrimary = Color.White,
     primaryContainer = PrimaryContainerLight,
@@ -52,7 +52,7 @@ private val LightColors = lightColorScheme(
     inverseOnSurface = LightSurface
 )
 
-private val DarkColors = darkColorScheme(
+internal val DarkColors = darkColorScheme(
     primary = BrandSecondary,
     onPrimary = Color(0xFF0A1B3D),
     primaryContainer = PrimaryContainerDark,

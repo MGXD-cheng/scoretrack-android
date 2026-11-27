@@ -27,10 +27,13 @@ import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
 import androidx.glance.layout.padding
+import androidx.glance.material3.ColorProviders
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextStyle
 import com.lingxi.scoretrack.MainActivity
+import com.lingxi.scoretrack.ui.theme.DarkColors
+import com.lingxi.scoretrack.ui.theme.LightColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -67,7 +70,11 @@ class ScoreTrackWidget : GlanceAppWidget() {
         }.getOrNull()
 
         provideContent {
-            GlanceTheme {
+            // 显式传 colors：不传的话 GlanceTheme 会去读 CompositionLocal，
+            // 而它的默认值并不保证存在 —— 一旦取不到就抛异常，
+            // 整个组合崩掉，桌面上只剩一张 initialLayout 的 loading 图。
+            // 用 App 自己的配色，顺便让小组件和界面同色系。
+            GlanceTheme(colors = WidgetColors) {
                 if (snapshot == null) FallbackContent() else WidgetContent(snapshot)
             }
         }
@@ -76,6 +83,12 @@ class ScoreTrackWidget : GlanceAppWidget() {
     companion object {
         val SMALL = DpSize(180.dp, 110.dp)
         val WIDE = DpSize(320.dp, 160.dp)
+
+        /** 沿用 App 的 M3 配色，深浅两套都带上，Glance 会按系统主题自己挑 */
+        private val WidgetColors = ColorProviders(
+            light = LightColors,
+            dark = DarkColors
+        )
     }
 }
 

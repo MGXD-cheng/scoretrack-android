@@ -45,21 +45,31 @@
 
 ### 修复（发布前，小组件加载不出来）
 
-第一版 v0.5.0 的小组件装上去只有一片空白 / 永远停在 loading。三个原因：
+第一版的小组件装上去只有一个转圈 —— 那是 `initialLayout` 的 loading 占位图，
+说明 `provideContent` 的组合**从来没有成功完成过**。四个原因，逐个修掉：
 
-1. **`observe()` 没有 `remember`**。`collectAsState` 见到新的 Flow 实例就会
-   重新订阅，而每次重组都会 new 一个 Flow —— 于是「重组 → 新 Flow →
-   重新订阅 → 新 emission → 再重组」无限循环，RemoteViews 永远渲染不出来。
-   改成 `remember { loader.observe() }`。
-2. **冷启动读不到当前档案**。原来依赖 `ProfileSession`，它的初始值是 `0L`，
+1. **`collectAsState` 在 Glance 里不可靠**。Glance 的 composition 是给
+   RemoteViews 用的精简实现，`LaunchedEffect` 不会被可靠执行，而
+   `collectAsState` 内部正是靠它收集 Flow —— 组合永远拿不到第一帧数据。
+   **改成在 `provideGlance` 里先 `loadOnce()`（切 IO），再进 composition**；
+   数据新鲜度交给 `updatePeriodMillis`（30 分钟重跑一次 provideGlance）
+   和「App 回前台时 updateAll」。
+2. **`GlanceTheme {}` 没传 colors**。它会去读 CompositionLocal，而那个
+   默认值并不保证存在 —— 取不到就抛异常，组合直接崩掉。
+   **改成 `GlanceTheme(colors = ColorProviders(LightColors, DarkColors))`**，
+   顺便让小组件和 App 用同一套 M3 配色（`LightColors` / `DarkColors`
+   从 `private` 改为 `internal`，主题保持单一来源）。
+3. **冷启动读不到当前档案**。原来依赖 `ProfileSession`，它的初始值是 `0L`，
    真实值靠 `init` 里的异步 bootstrap。小组件常常是冷启动渲染的，
-   第一次几乎必然读到 0 → 一张空卡片。改成直接读数据库里 `isDefault` 的档案
-   （`switchTo` 本来就会同步它），Room 的 Flow 冷启动可用。
-3. **异常会永久卡在 loading**。`provideGlance` 抛任何异常，小组件就停在
-   `initialLayout` 那张占位图上，没有任何提示。现在加了降级卡片
-   （「暂时读不到数据 / 点一下打开学迹」），Flow 上也兜了一层 `catch`。
+   第一次几乎必然读到 0 → 一张空卡片。**改成直接查数据库里 `isDefault`
+   的档案**（`switchTo` 本来就会同步它）。
+4. **异常会永久卡在 loading**。`provideGlance` 抛异常时界面毫无提示。
+   现在整段 `runCatching`，失败时渲染一张降级卡片
+   （「暂时读不到数据 / 点一下打开学迹」）。
 
-> versionCode 6 / versionName 仍是 0.5.0：同版本号覆盖安装用。
+> 这一版 `versionCode` 8 / `versionName` 仍是 0.5.0 —— 同一版本号覆盖安装用。
+> 老用户升上来需要：安装新 APK → **移除桌面上的旧小组件，再重新添加**
+> （已存在的实例里存的是旧布局，不会自动换）。
 
 ### 测试
 
