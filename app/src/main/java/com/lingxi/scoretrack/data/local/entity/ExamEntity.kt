@@ -28,5 +28,14 @@ data class ExamEntity(
     val type: String,
     val date: Long,
     val remark: String? = null,
+    /**
+     * 成绩反思：用户自己写的「这次为什么考成这样」。
+     *
+     * 和 [remark] 分开存是有意的 —— remark 是「第三考场」「补考」这类
+     * 客观信息，反思是主观复盘，两者不该挤在一个输入框里。
+     */
+    val reflection: String? = null,
+    /** AI 基于这次成绩 + 上面的反思给出的建议。用户原话永远不会被它覆盖。 */
+    val aiReflection: String? = null,
     val updatedAt: Long = System.currentTimeMillis()
 )

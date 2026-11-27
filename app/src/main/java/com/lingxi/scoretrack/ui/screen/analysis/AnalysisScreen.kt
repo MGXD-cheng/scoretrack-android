@@ -84,7 +84,7 @@ fun AnalysisScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "基于历次成绩走势与错题分布，由 AI 给出学科诊断与学习建议。",
+                text = "基于历次成绩走势与目标差距，由 AI 给出学科诊断与学习建议。",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

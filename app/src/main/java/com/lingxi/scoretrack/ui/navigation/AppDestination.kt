@@ -4,7 +4,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
@@ -20,7 +19,6 @@ sealed class AppDestination(
 
     data object Scores : AppDestination("scores", "成绩", Icons.AutoMirrored.Filled.List)
 
-    data object Mistakes : AppDestination("mistakes", "错题", Icons.Filled.Warning)
 
     data object Settings : AppDestination("settings", "设置", Icons.Filled.Settings)
 
@@ -31,7 +29,7 @@ sealed class AppDestination(
          *
          * 「图表」不再单独占位 —— 它的内容已经并进首页（见 ChartsSection）。
          */
-        val bottomItems: List<AppDestination> = listOf(Home, Scores, Mistakes, Settings)
+        val bottomItems: List<AppDestination> = listOf(Home, Scores, Settings)
 
         // ---------- 二级页面（不在底部导航） ----------
 
@@ -40,7 +38,6 @@ sealed class AppDestination(
         /** 编辑考试路由：examId = 0 表示新建 */
         fun examEditRoute(examId: Long = 0L): String = "$EXAM_EDIT?examId=$examId"
 
-        const val MISTAKE_DETAIL = "mistake_detail"
 
         /** 拍照识别成绩单 */
         const val IMPORT_SCREEN = "import_screen"
@@ -61,14 +58,11 @@ sealed class AppDestination(
         /** 诊断报告详情路由 */
         fun analysisDetailRoute(reportId: Long): String = "$ANALYSIS_DETAIL?reportId=$reportId"
 
-        /** 错题详情路由 */
-        fun mistakeDetailRoute(mistakeId: Long): String = "$MISTAKE_DETAIL?mistakeId=$mistakeId"
 
         const val SCORE_ENTRY = "score_entry"
 
         const val PAPER_DETAIL = "paper_detail"
 
-        const val KNOWLEDGE = "knowledge"
 
         const val AI_CONFIG = "ai_config"
 
@@ -85,7 +79,5 @@ sealed class AppDestination(
         /** 多档案数据对比 */
         const val PROFILE_COMPARE = "profile_compare"
 
-        /** 错题文本批量导入 */
-        const val MISTAKE_IMPORT = "mistake_import"
     }
 }

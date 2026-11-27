@@ -53,12 +53,12 @@ interface ExamDao {
     // ==================================================================
     // 级联统计与级联删除
     //
-    // 删一场考试，会沿着 exam → paper → question → mistake / question_knowledge
+    // 删一场考试，会沿着 exam → paper → question
     // 这条链一路带走附属数据。外键上都写了 CASCADE，理论上 @Delete 一句就够了，
     // 但这里还是**显式按链条删**，理由和删科目时一样：
     // CASCADE 依赖 `PRAGMA foreign_keys = ON`，赌它永远开着不如自己动手。
     //
-    // 更要紧的是：用户根本不知道「删考试」等于「删错题」。所以删除前
+    // 更要紧的是：用户根本不知道「删考试」等于「删题目」。所以删除前
     // 必须先查一遍数量，把这些数字摆在确认框里 —— 这才是负责的做法。
     // ==================================================================
 
@@ -70,27 +70,6 @@ interface ExamDao {
             "(SELECT id FROM paper WHERE examId = :examId)"
     )
     suspend fun countQuestions(examId: Long): Int
-
-    @Query(
-        "SELECT COUNT(*) FROM mistake WHERE questionId IN " +
-            "(SELECT q.id FROM question q JOIN paper p ON q.paperId = p.id " +
-            "WHERE p.examId = :examId)"
-    )
-    suspend fun countMistakes(examId: Long): Int
-
-    @Query(
-        "DELETE FROM mistake WHERE questionId IN " +
-            "(SELECT q.id FROM question q JOIN paper p ON q.paperId = p.id " +
-            "WHERE p.examId = :examId)"
-    )
-    suspend fun deleteMistakesOfExam(examId: Long)
-
-    @Query(
-        "DELETE FROM question_knowledge WHERE questionId IN " +
-            "(SELECT q.id FROM question q JOIN paper p ON q.paperId = p.id " +
-            "WHERE p.examId = :examId)"
-    )
-    suspend fun deleteQuestionKnowledgeOfExam(examId: Long)
 
     @Query(
         "DELETE FROM question WHERE paperId IN " +

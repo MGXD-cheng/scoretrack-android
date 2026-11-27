@@ -163,7 +163,6 @@ fun ImportScreen(
 
             ImportStage.Done -> DoneContent(
                 examId = state.importedExamId,
-                autoCategorizeMessage = state.autoCategorizeMessage,
                 onOpenExam = onOpenExam,
                 onImportAnother = viewModel::backToIdle
             )
@@ -190,7 +189,7 @@ private fun IdleContent(
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "支持拍照 / 图片、PDF、Word、CSV、Excel。\n" +
-                "AI 会自动提取考试名称、各科分数和错题。",
+                "AI 会自动提取考试名称和各科分数。",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -284,7 +283,7 @@ private fun PreviewContent(
             )
             Text(
                 text = "识别到 ${exam.subjects.size} 个科目 · " +
-                    "${exam.wrongQuestionCount} 道错题 · " +
+                    "${exam.wrongQuestionCount} 道题目 · " +
                     "总分 ${formatScore(exam.totalScore)}/${formatScore(exam.totalFullScore)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -359,7 +358,7 @@ private fun PreviewContent(
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "导入后：各科分数进入「成绩」趋势，错题自动加入「错题本」。",
+                text = "导入后：各科分数进入「成绩」趋势。",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -392,7 +391,7 @@ private fun SubjectEditRow(
                 )
                 if (subject.questions.isNotEmpty()) {
                     Text(
-                        text = "${subject.questions.size} 道错题",
+                        text = "${subject.questions.size} 道题目",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.error
                     )
@@ -425,7 +424,6 @@ private fun SubjectEditRow(
 @Composable
 private fun DoneContent(
     examId: Long?,
-    autoCategorizeMessage: String?,
     onOpenExam: (Long) -> Unit,
     onImportAnother: () -> Unit
 ) {
@@ -439,26 +437,10 @@ private fun DoneContent(
         Text(text = "导入完成 ✓", style = MaterialTheme.typography.titleLarge)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "考试成绩和错题都已经写进去了。",
+            text = "考试成绩已经写进去了。",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-
-        // 自动归纳是异步跑的，可能这会儿还没回来 —— 回来了才显示
-        if (autoCategorizeMessage != null) {
-            Spacer(modifier = Modifier.height(12.dp))
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                )
-            ) {
-                Text(
-                    text = autoCategorizeMessage,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(12.dp)
-                )
-            }
-        }
 
         Spacer(modifier = Modifier.height(24.dp))
         Button(

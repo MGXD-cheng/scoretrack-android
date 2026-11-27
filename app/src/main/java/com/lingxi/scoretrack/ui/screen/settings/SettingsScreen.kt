@@ -28,7 +28,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -58,7 +57,6 @@ fun SettingsScreen(
     val profiles by viewModel.profiles.collectAsStateWithLifecycle()
     val currentId by viewModel.currentProfileId.collectAsStateWithLifecycle()
     val pendingDelete by viewModel.pendingDelete.collectAsStateWithLifecycle()
-    val autoKnowledge by viewModel.autoKnowledge.collectAsStateWithLifecycle()
     val backupMessage by viewModel.backupMessage.collectAsStateWithLifecycle()
     val isBackupBusy by viewModel.isBackupBusy.collectAsStateWithLifecycle()
     val updateResult by viewModel.updateResult.collectAsStateWithLifecycle()
@@ -102,17 +100,6 @@ fun SettingsScreen(
                         title = "AI 配置",
                         subtitle = "文本模型 / 视觉模型、API Key 与连通性测试",
                         onClick = onOpenAiConfig
-                    )
-                    HorizontalDivider()
-                    SettingsRow(
-                        title = "自动归纳知识点",
-                        subtitle = "导入错题后自动让 AI 归类（会消耗 token）",
-                        trailing = {
-                            Switch(
-                                checked = autoKnowledge,
-                                onCheckedChange = viewModel::setAutoKnowledge
-                            )
-                        }
                     )
                 }
             }
@@ -160,7 +147,7 @@ fun SettingsScreen(
                 SettingsCard {
                     SettingsRow(
                         title = "档案对比",
-                        subtitle = "把几个档案的成绩、错题量横向放在一起看",
+                        subtitle = "把几个档案的成绩、得分率横向放在一起看",
                         onClick = onOpenCompare
                     )
                 }
@@ -171,7 +158,7 @@ fun SettingsScreen(
                 SettingsCard {
                     SettingsRow(
                         title = "导入成绩单",
-                        subtitle = "拍照识别，自动录入分数与错题",
+                        subtitle = "拍照识别，自动录入各科分数",
                         onClick = onOpenImport
                     )
                     SettingsRow(
@@ -335,7 +322,7 @@ fun SettingsScreen(
             title = { Text("删除档案") },
             text = {
                 Text(
-                    "「${target.name}」及其全部数据（科目、考试、成绩、错题、分析报告等）" +
+                    "「${target.name}」及其全部数据（科目、考试、成绩、分析报告等）" +
                         "将被永久删除，且无法恢复。"
                 )
             },

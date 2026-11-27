@@ -227,7 +227,7 @@ object RecognizedExamParser {
 
     private fun RawRecognizedQuestion.toDomain(): RecognizedQuestion? {
         val questionNumber = number?.takeIf { it.isNotBlank() } ?: return null
-        // 整题都没信息就丢掉，避免塞一堆空壳进错题本
+        // 整题都没信息就丢掉，避免塞一堆空壳进来
         val hasAnyContent = listOf(content, userAnswer, correctAnswer, wrongReason)
             .any { !it.isNullOrBlank() }
         if (!hasAnyContent) return null

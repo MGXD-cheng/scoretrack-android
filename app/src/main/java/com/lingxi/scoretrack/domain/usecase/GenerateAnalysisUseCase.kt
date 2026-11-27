@@ -5,7 +5,6 @@ import com.lingxi.scoretrack.data.repository.AiRepository
 import com.lingxi.scoretrack.data.repository.AnalysisReportRepository
 import com.lingxi.scoretrack.data.repository.ExamGoalRepository
 import com.lingxi.scoretrack.data.repository.ExamRepository
-import com.lingxi.scoretrack.data.repository.MistakeRepository
 import com.lingxi.scoretrack.data.repository.ProfileRepository
 import com.lingxi.scoretrack.data.repository.ScoreRepository
 import com.lingxi.scoretrack.data.repository.SubjectRepository
@@ -29,7 +28,6 @@ class GenerateAnalysisUseCase @Inject constructor(
     private val examGoalRepository: ExamGoalRepository,
     private val scoreRepository: ScoreRepository,
     private val subjectRepository: SubjectRepository,
-    private val mistakeRepository: MistakeRepository,
     private val analysisReportRepository: AnalysisReportRepository,
     private val aiRepository: AiRepository
 ) {
@@ -47,7 +45,6 @@ class GenerateAnalysisUseCase @Inject constructor(
 
         val subjects = subjectRepository.getByProfile(profileId)
         val scores = scoreRepository.observeByProfile(profileId).first()
-        val mistakes = mistakeRepository.observeDetailByProfile(profileId).first()
         val goals = examGoalRepository.observeByProfile(profileId).first()
 
         val digest = AnalysisPrompt.buildDataDigest(
@@ -55,7 +52,6 @@ class GenerateAnalysisUseCase @Inject constructor(
             exams = exams,
             scores = scores,
             subjects = subjects,
-            mistakes = mistakes,
             goals = goals
         )
 

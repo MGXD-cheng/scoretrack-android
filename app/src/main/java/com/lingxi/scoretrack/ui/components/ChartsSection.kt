@@ -261,7 +261,7 @@ fun AnalysisCard(
             if (report == null) {
                 Text(
                     text = "还没有分析报告。点「查看全部」进去生成一份，" +
-                        "AI 会读一遍你的成绩、目标和错题。",
+                        "AI 会读一遍你的成绩和目标。",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

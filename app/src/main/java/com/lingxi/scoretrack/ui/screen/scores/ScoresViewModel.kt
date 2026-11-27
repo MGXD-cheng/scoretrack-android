@@ -58,7 +58,7 @@ class ScoresViewModel @Inject constructor(
 
     // ---------- 删除考试 ----------
     // 走二次确认。理由不是「怕误触」这么表面 —— 而是删除会在一个事务里
-    // 连带清掉这场考试下面的试卷、题目、错题、知识点关联，用户完全看不到
+    // 连带清掉这场考试下面的试卷和题目，用户完全看不到
     // 这条链。所以确认框必须先把数字摆出来，让人知道自己在删什么。
 
     private val _deleteTarget = MutableStateFlow<ExamEntity?>(null)

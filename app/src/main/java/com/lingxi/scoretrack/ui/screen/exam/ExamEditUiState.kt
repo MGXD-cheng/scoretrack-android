@@ -25,6 +25,12 @@ data class ExamEditUiState(
     val type: String = ExamTypeCatalog.DEFAULT_TYPES.first(),
     val date: Long = System.currentTimeMillis(),
     val remark: String = "",
+    /** 用户自己写的成绩反思 */
+    val reflection: String = "",
+    /** AI 基于成绩 + 反思给出的建议。和用户原话分开，互不覆盖 */
+    val aiReflection: String? = null,
+    val isReflecting: Boolean = false,
+    val reflectError: String? = null,
     val entries: List<ScoreEntryInput> = emptyList(),
     val isSaving: Boolean = false,
     /**

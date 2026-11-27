@@ -11,7 +11,6 @@ import com.lingxi.scoretrack.domain.model.RecognizeResult
 import com.lingxi.scoretrack.domain.model.RecognizedExam
 import com.lingxi.scoretrack.domain.model.RecognizedSubject
 import com.lingxi.scoretrack.domain.usecase.CommitRecognizedExamUseCase
-import com.lingxi.scoretrack.domain.usecase.GenerateKnowledgePointsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -40,7 +39,6 @@ data class ImportUiState(
      */
     val selectedStudentIndex: Int = 0,
     /** 自动归纳的结果提示。为 null 表示没跑（开关没开）或还在跑 */
-    val autoCategorizeMessage: String? = null,
     val error: String? = null,
     val isImporting: Boolean = false,
     val importedExamId: Long? = null
@@ -55,7 +53,6 @@ class ImportViewModel @Inject constructor(
     private val aiRepository: AiRepository,
     private val appSettingRepository: AppSettingRepository,
     private val commitUseCase: CommitRecognizedExamUseCase,
-    private val generateKnowledgePoints: GenerateKnowledgePointsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ImportUiState())
@@ -167,8 +164,6 @@ class ImportViewModel @Inject constructor(
             error = null,
             // 选中的学生也要复位，否则下一次识别多人文件会默认选中上一次的位置
             selectedStudentIndex = 0,
-            // 上一次的归纳提示不能带到下一次导入里
-            autoCategorizeMessage = null
         )
     }
 
@@ -208,8 +203,6 @@ class ImportViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(stage = ImportStage.Done, isImporting = false, importedExamId = examId)
                     }
-                    // 落库已经成功，归纳是「锦上添花」——放最后，失败了也不影响导入
-                    maybeAutoCategorize(profileId)
                 }
                 .onFailure { error ->
                     _uiState.update {
@@ -222,43 +215,6 @@ class ImportViewModel @Inject constructor(
         }
     }
 
-    /**
-     * 导入完成后，如果开了「自动归纳知识点」，就顺手把这件事做了。
-     *
-     * **刻意不阻塞 UI**：归纳要跑一次 AI 调用，可能十几秒。用户此刻只想
-     * 看到「导入完成」，不该被这个拖住 —— 所以它是 fire-and-forget，
-     * 结果通过 [ImportUiState.autoCategorizeMessage] 异步回填。
-     */
-    private fun maybeAutoCategorize(profileId: Long) {
-        viewModelScope.launch {
-            val enabled = appSettingRepository.getBoolean(
-                AppSettingRepository.KEY_AUTO_KNOWLEDGE,
-                false
-            )
-            if (!enabled) return@launch
-
-            // 注意：invoke 本身已经返回 Result，这里**不要再套 runCatching** ——
-            // 否则拿到的是 Result<Result<T>>，fold 出来的"summary"其实是 Result。
-            val result = generateKnowledgePoints.invoke(profileId)
-            _uiState.update { state ->
-                state.copy(
-                    autoCategorizeMessage = result.fold(
-                        onSuccess = { summary ->
-                            val total = summary.newPointCount + summary.reusedPointCount
-                            if (total == 0) {
-                                "已自动归纳知识点，但没有发现新的薄弱点"
-                            } else {
-                                "已自动归纳 $total 个知识点" +
-                                    "（新增 ${summary.newPointCount}）"
-                            }
-                        },
-                        // 归纳失败不该影响「导入成功」这个事实，所以只提示不报错
-                        onFailure = { "知识点自动归纳失败：${it.message}" }
-                    )
-                )
-            }
-        }
-    }
 
     private fun mutatePreview(transform: (RecognizedExam) -> RecognizedExam) =
         _uiState.update { state ->

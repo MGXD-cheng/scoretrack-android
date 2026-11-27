@@ -26,10 +26,10 @@ data class QuestionDraft(
     val fullScoreValue: Float get() = fullScore.toFloatOrNull() ?: 0f
 
     /**
-     * 错题判定：**有满分、且得分低于满分**。
+     * 失分判定：**有满分、且得分低于满分**。
      *
      * 满分没填时不判定 —— 宁可漏判也不要误伤：
-     * 把一道没录满分的题当成错题塞进错题本，用户会很恼火。
+     * 把一道没录满分的题当成答错，用户会觉得莫名其妙。
      */
     val isWrong: Boolean get() = fullScoreValue > 0f && scoreValue < fullScoreValue
 

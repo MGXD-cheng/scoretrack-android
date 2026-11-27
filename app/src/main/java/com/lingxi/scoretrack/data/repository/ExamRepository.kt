@@ -39,32 +39,28 @@ class ExamRepository @Inject constructor(
      * 一次级联删除会带走多少条附属数据。
      *
      * 用户看到「删除考试」时，脑子里想的是「这场考试不记了」，而不是
-     * 「我在这个 App 里记的十几道错题也没了」。这些数字必须提前摊开给他看。
+     * 「我记的那十几道题也没了」。这些数字必须提前摊开给他看。
      */
     data class ExamCascadeCount(
         val papers: Int = 0,
-        val questions: Int = 0,
-        val mistakes: Int = 0
+        val questions: Int = 0
     ) {
-        val hasAttachments: Boolean get() = papers > 0 || questions > 0 || mistakes > 0
+        val hasAttachments: Boolean get() = papers > 0 || questions > 0
     }
 
     suspend fun countCascade(examId: Long): ExamCascadeCount = ExamCascadeCount(
         papers = examDao.countPapers(examId),
-        questions = examDao.countQuestions(examId),
-        mistakes = examDao.countMistakes(examId)
+        questions = examDao.countQuestions(examId)
     )
 
     /**
-     * 删除一场考试，连同它下面的试卷、题目、错题、知识点关联。
+     * 删除一场考试，连同它下面的试卷和题目。
      *
-     * 顺序是从叶子往根删（错题 → 知识点关联 → 题目 → 试卷 → 成绩 → 考试），
+     * 顺序是从叶子往根删（题目 → 试卷 → 成绩 → 考试），
      * 这样即使外键约束某个时刻没生效，中途也不会留下「父没了子还在」的孤儿行。
      * 整个操作用事务包住：删一半失败就全部回滚，不会出现「成绩没了但考试还在」。
      */
     suspend fun deleteWithCascade(exam: ExamEntity) = database.withTransaction {
-        examDao.deleteMistakesOfExam(exam.id)
-        examDao.deleteQuestionKnowledgeOfExam(exam.id)
         examDao.deleteQuestionsOfExam(exam.id)
         examDao.deletePapersOfExam(exam.id)
         scoreDao.deleteByExam(exam.id)

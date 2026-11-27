@@ -4,7 +4,6 @@ import com.lingxi.scoretrack.data.local.entity.ExamEntity
 import com.lingxi.scoretrack.data.local.entity.ExamGoalEntity
 import com.lingxi.scoretrack.data.local.entity.ScoreEntity
 import com.lingxi.scoretrack.data.local.entity.SubjectEntity
-import com.lingxi.scoretrack.data.local.model.MistakeDetailRow
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -19,7 +18,7 @@ import java.util.Locale
 object AnalysisPrompt {
 
     val SYSTEM: String = """
-        你是一位耐心、专业的学习规划老师。学生会提供自己的历次考试成绩、错题统计，
+        你是一位耐心、专业的学习规划老师。学生会提供自己的历次考试成绩，
 如果学生设过考试目标，也会一并给出。请你据此写一份学习分析。
 
         格式要求（严格遵守）：
@@ -35,9 +34,8 @@ object AnalysisPrompt {
           最近一次离总分目标还差多少分、哪些科目拖了后腿、哪些科目已经达标，
           并判断照当前趋势下次考试能否达到目标
         - 如果学生没有设定目标，就在「目标差距」一节里建议他先定一个可衡量的目标
-        - 建议要具体可执行（例如"每天固定 20 分钟整理一道导数错题"），
+        - 建议要具体可执行（例如"每天固定 20 分钟复盘一道立体几何大题"），
           不要写"要努力学习""多做题"这类空话
-        - 错题数据要充分利用：如果某科错题积压多，要点出来
         - 语气鼓励，但**不要空洞地夸奖**，也不要打击
         - 如果数据太少（只有 1 次考试），就如实说明样本有限，给出初步观察即可
 
@@ -49,8 +47,6 @@ object AnalysisPrompt {
     /** 摘要里最多带几次考试，避免 prompt 过长 */
     private const val MAX_EXAMS = 10
 
-    /** 最多带几道错题作为例子 */
-    private const val MAX_MISTAKES = 15
 
     /**
      * 把数据库里的原始记录，组装成一份**已经算好统计量**的文本摘要。
@@ -60,13 +56,6 @@ object AnalysisPrompt {
         exams: List<ExamEntity>,
         scores: List<ScoreEntity>,
         subjects: List<SubjectEntity>,
-        /**
-         * 错题列表。
-         * 直接复用错题本的 MistakeDetailRow —— 它已经 join 好了
-         * mistake → question → paper → exam，题干、科目、状态一个不缺，
-         * 这里没必要再写一遍同样的 SQL。
-         */
-        mistakes: List<MistakeDetailRow>,
         /** 考试目标。可能为空 —— 用户还没设过 */
         goals: List<ExamGoalEntity> = emptyList()
     ): String {
@@ -186,41 +175,6 @@ object AnalysisPrompt {
                 }
             }
 
-            // ---------- 4. 错题统计 ----------
-            appendLine()
-            appendLine("【错题统计】")
-            if (mistakes.isEmpty()) {
-                appendLine("- 错题本为空")
-            } else {
-                val pending = mistakes.count { !it.isMastered }
-                appendLine("- 错题总数：${mistakes.size} 道，其中待复习（未掌握）$pending 道")
-
-                val bySubject = mistakes
-                    .groupingBy { subjectById[it.subjectId]?.name ?: "未知科目" }
-                    .eachCount()
-                appendLine("- 按科目分布：" + bySubject.entries.joinToString("；") { "${it.key} ${it.value} 道" })
-
-                val byStatus = mistakes.groupingBy { it.reviewStatus }.eachCount()
-                appendLine("- 按复习状态：" + byStatus.entries.joinToString("；") { "${it.key} ${it.value} 道" })
-
-                // 积压最多的科目值得单独点出来
-                val worst = bySubject.maxByOrNull { it.value }
-                if (worst != null && worst.value >= 3) {
-                    appendLine("- 错题积压最多：${worst.key}（${worst.value} 道）")
-                }
-            }
-
-            appendLine()
-            appendLine("【错题举例】（最多 ${MAX_MISTAKES} 道）")
-            mistakes.take(MAX_MISTAKES).forEach { mistake ->
-                val subjectName = subjectById[mistake.subjectId]?.name ?: "未知科目"
-                val content = mistake.content?.takeIf { it.isNotBlank() } ?: "（题目内容未填写）"
-                val note = mistake.note?.takeIf { it.isNotBlank() }
-                appendLine(
-                    "- [$subjectName / ${mistake.reviewStatus}] $content" +
-                        (note?.let { "｜错因：$it" } ?: "")
-                )
-            }
         }
     }
 

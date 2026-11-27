@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lingxi.scoretrack.data.local.entity.ProfileEntity
 import com.lingxi.scoretrack.data.repository.ExamRepository
-import com.lingxi.scoretrack.data.repository.MistakeRepository
 import com.lingxi.scoretrack.data.repository.ProfileRepository
 import com.lingxi.scoretrack.data.repository.ScoreRepository
 import com.lingxi.scoretrack.data.repository.SubjectRepository
@@ -31,8 +30,6 @@ data class ProfileSummary(
     val isDefault: Boolean,
     val examCount: Int,
     val subjectCount: Int,
-    val mistakeCount: Int,
-    val pendingMistakes: Int,
     /** 历次考试得分率的平均（0~1）。没有成绩时为 null */
     val averageRate: Float?,
     val latestExamName: String?,
@@ -73,7 +70,7 @@ data class CompareUiState(
  *
  * ## 数据怎么来
  *
- * 每个档案各开一组 Flow（考试 / 成绩 / 科目 / 错题），互不干扰地汇总，
+ * 每个档案各开一组 Flow（考试 / 成绩 / 科目），互不干扰地汇总，
  * 然后用 `combine` 把它们拼成一行。任何一个档案的数据变了（比如刚录了
  * 一场新考试），整张对比表会自动重算 —— 不需要手动刷新。
  */
@@ -84,7 +81,6 @@ class ProfileCompareViewModel @Inject constructor(
     private val examRepository: ExamRepository,
     private val scoreRepository: ScoreRepository,
     private val subjectRepository: SubjectRepository,
-    private val mistakeRepository: MistakeRepository
 ) : ViewModel() {
 
     val uiState: StateFlow<CompareUiState> = profileRepository.observeAll()
@@ -111,9 +107,8 @@ class ProfileCompareViewModel @Inject constructor(
     private fun summaryFlow(profile: ProfileEntity): Flow<ProfileSummary> = combine(
         examRepository.observeByProfile(profile.id),
         scoreRepository.observeByProfile(profile.id),
-        subjectRepository.observeByProfile(profile.id),
-        mistakeRepository.observeByProfile(profile.id)
-    ) { exams, scores, subjects, mistakes ->
+        subjectRepository.observeByProfile(profile.id)
+    ) { exams, scores, subjects ->
         val scoresByExam = scores.groupBy { it.examId }
 
         // 得分率按「整场考试」算：单科 90/150 和 45/100 没法直接比，
@@ -132,9 +127,6 @@ class ProfileCompareViewModel @Inject constructor(
             isDefault = profile.isDefault,
             examCount = exams.size,
             subjectCount = subjects.size,
-            mistakeCount = mistakes.size,
-            // 「已掌握」之外都算待复习 —— 和错题页的口径保持一致
-            pendingMistakes = mistakes.count { it.reviewStatus != "已掌握" },
             averageRate = if (rates.isEmpty()) null else (rates.average()).toFloat(),
             latestExamName = latestExam?.name,
             latestExamDate = latestExam?.date,

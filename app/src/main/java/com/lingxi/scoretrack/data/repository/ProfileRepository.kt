@@ -61,20 +61,17 @@ class ProfileRepository @Inject constructor(
     suspend fun delete(profile: ProfileEntity) = profileDao.delete(profile)
 
     /**
-     * 彻底删除档案及其全部关联数据（科目/考试/成绩/试卷/题目/错题/知识点/分析报告…）。
+     * 彻底删除档案及其全部关联数据（科目/考试/成绩/试卷/题目/分析报告…）。
      *
      * 全程在一个事务里，按依赖顺序显式级联，不依赖 PRAGMA foreign_keys。
      * 如果删掉的是默认档案，自动把剩下的第一个顶上 —— 避免出现「没有默认档案」的状态。
      */
     suspend fun deleteCascade(profileId: Long) = database.withTransaction {
-        profileCleanupDao.deleteQuestionKnowledge(profileId)
-        profileCleanupDao.deleteMistakes(profileId)
         profileCleanupDao.deleteQuestions(profileId)
         profileCleanupDao.deletePapers(profileId)
         profileCleanupDao.deleteScores(profileId)
         profileCleanupDao.deleteAnalysisReports(profileId)
         profileCleanupDao.deleteImportTasks(profileId)
-        profileCleanupDao.deleteKnowledgePoints(profileId)
         profileCleanupDao.deleteSubjects(profileId)
         profileCleanupDao.deleteExams(profileId)
         profileDao.deleteById(profileId)

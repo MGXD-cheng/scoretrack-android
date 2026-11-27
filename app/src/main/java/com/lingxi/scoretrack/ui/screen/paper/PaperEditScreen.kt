@@ -55,7 +55,7 @@ import com.lingxi.scoretrack.ui.util.formatScore
 /**
  * 手动录入一次考试中某一科目的小题分。
  *
- * 这是错题本的**手动入口** —— 在此之前，错题只能靠 AI 识别导入产生。
+ * 小题分录入：录完之后，成绩详情里能看到每道题的得失分。
  */
 @Composable
 fun PaperEditScreen(
@@ -163,7 +163,7 @@ fun PaperEditScreen(
 
             item {
                 Text(
-                    text = "得分低于满分的题会自动进入错题本；改对之后会自动移出。\n" +
+                    text = "得分低于满分的题会被标出来，方便复盘。\n" +
                         "也可以点右上角「导入」，上传卷子照片、PDF、Word、CSV 或 Excel，" +
                         "AI 会按题号把小题填进来（同题号更新，新题号追加）。",
                     style = MaterialTheme.typography.bodySmall,
@@ -193,7 +193,7 @@ private fun SummaryCard(state: PaperEditUiState) {
             Text(
                 text = "已录 ${state.questions.size} 题 · " +
                     "总分 ${formatScore(state.totalScore)}/${formatScore(state.totalFullScore)}" +
-                    if (state.wrongCount > 0) " · 错题 ${state.wrongCount} 道" else "",
+                    if (state.wrongCount > 0) " · 失分 ${state.wrongCount} 道" else "",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold
             )
@@ -229,7 +229,7 @@ private fun QuestionCard(
                         if (draft.isWrong) {
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "错题",
+                                text = "失分",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.error
                             )
@@ -285,7 +285,7 @@ private fun QuestionCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
                 // 题型。之前这里完全没有入口 —— question.type 有字段、
-                // 错题详情也在读，但录入时压根没机会填，一直是 null。
+                // 题目详情也在读，但录入时压根没机会填，一直是 null。
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     QUESTION_TYPE_OPTIONS.forEach { option ->
                         FilterChip(

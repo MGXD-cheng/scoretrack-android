@@ -6,12 +6,9 @@ import com.lingxi.scoretrack.data.local.entity.AppSettingEntity
 import com.lingxi.scoretrack.data.local.entity.AnalysisReportEntity
 import com.lingxi.scoretrack.data.local.entity.ExamEntity
 import com.lingxi.scoretrack.data.local.entity.ExamGoalEntity
-import com.lingxi.scoretrack.data.local.entity.KnowledgePointEntity
-import com.lingxi.scoretrack.data.local.entity.MistakeEntity
 import com.lingxi.scoretrack.data.local.entity.PaperEntity
 import com.lingxi.scoretrack.data.local.entity.ProfileEntity
 import com.lingxi.scoretrack.data.local.entity.QuestionEntity
-import com.lingxi.scoretrack.data.local.entity.QuestionKnowledgeEntity
 import com.lingxi.scoretrack.data.local.entity.ScoreEntity
 import com.lingxi.scoretrack.data.local.entity.SubjectEntity
 import com.lingxi.scoretrack.domain.exam.ExamTypeCatalog
@@ -63,11 +60,9 @@ data class ImportResult(
  * | score | 考试 + 科目 |
  * | paper | 考试 + 科目 |
  * | question | 试卷 + 题号 |
- * | knowledge_point | 档案 + 科目 + 名称 |
- * | mistake | 档案 + 题目 |
  *
- * 命中已有数据时，**按 `updatedAt` 新者胜**；没有 `updatedAt` 的表
- * （mistake / analysis_report）见各自的注释。
+ * 命中已有数据时，**按 `updatedAt` 新者胜**；没有 `updatedAt` 的
+ * analysis_report 见它自己的注释。
  *
  * ## 整个导入在一个事务里
  * 中途失败就全部回滚。宁可「什么都没同步」，也不要「一半数据进来了、
@@ -98,7 +93,6 @@ class SnapshotImporter @Inject constructor(
             val examMap = mutableMapOf<Long, Long>()
             val paperMap = mutableMapOf<Long, Long>()
             val questionMap = mutableMapOf<Long, Long>()
-            val kpMap = mutableMapOf<Long, Long>()
 
             // ---------- 1. 档案 ----------
             val localProfiles = db.profileDao().getAllOnce()
@@ -349,84 +343,7 @@ class SnapshotImporter @Inject constructor(
                 questionMap[dto.id] = id
             }
 
-            // ---------- 8. 知识点 ----------
-            // 分两遍：parentId 指向的知识点可能在列表里排在后面，
-            // 第一遍只建点，第二遍才补父子关系
-            snapshot.knowledgePoints.forEach { dto ->
-                val pid = profileMap[dto.profileId] ?: run { skipped++; return@forEach }
-                val sid = subjectMap[dto.subjectId] ?: run { skipped++; return@forEach }
-                val existing = db.knowledgePointDao().findByName(pid, sid, dto.name)
-                val id = existing?.id ?: run {
-                    created++
-                    db.knowledgePointDao().insert(
-                        KnowledgePointEntity(
-                            profileId = pid,
-                            subjectId = sid,
-                            name = dto.name,
-                            aliases = dto.aliases,
-                            parentId = null,
-                            source = dto.source,
-                            updatedAt = dto.updatedAt
-                        )
-                    )
-                }
-                if (existing != null) skipped++
-                kpMap[dto.id] = id
-            }
-
-            snapshot.knowledgePoints.forEach { dto ->
-                val selfId = kpMap[dto.id] ?: return@forEach
-                val parentId = dto.parentId?.let { kpMap[it] } ?: return@forEach
-                val self = db.knowledgePointDao().getById(selfId) ?: return@forEach
-                if (self.parentId != parentId) {
-                    db.knowledgePointDao().update(self.copy(parentId = parentId))
-                }
-            }
-
-            // ---------- 9. 题目 ↔ 知识点 ----------
-            snapshot.questionKnowledge.forEach { dto ->
-                val qid = questionMap[dto.questionId] ?: return@forEach
-                val kid = kpMap[dto.knowledgePointId] ?: return@forEach
-                // IGNORE 冲突：这条关联已经存在就当没发生
-                db.questionKnowledgeDao().insert(QuestionKnowledgeEntity(qid, kid))
-            }
-
-            // ---------- 10. 错题 ----------
-            snapshot.mistakes.forEach { dto ->
-                val pid = profileMap[dto.profileId] ?: run { skipped++; return@forEach }
-                val qid = questionMap[dto.questionId] ?: run { skipped++; return@forEach }
-                val existing = db.mistakeDao().getByProfileAndQuestion(pid, qid)
-                if (existing == null) {
-                    created++
-                    db.mistakeDao().insert(
-                        MistakeEntity(
-                            profileId = pid,
-                            questionId = qid,
-                            note = dto.note,
-                            reviewStatus = dto.reviewStatus,
-                            reviewCount = dto.reviewCount,
-                            lastReviewAt = dto.lastReviewAt
-                        )
-                    )
-                } else if (dto.reviewCount > existing.reviewCount) {
-                    // 错题**没有 updatedAt**，而复习状态是用户在本机上
-                    // 一次次刷出来的。所以只在「对面复习得更勤」时才覆盖 ——
-                    // 反过来把本机的进度擦掉，用户会觉得「我的复习记录没了」
-                    updated++
-                    db.mistakeDao().update(
-                        existing.copy(
-                            note = dto.note ?: existing.note,
-                            reviewStatus = dto.reviewStatus,
-                            reviewCount = dto.reviewCount,
-                            lastReviewAt = dto.lastReviewAt
-                        )
-                    )
-                } else {
-                    skipped++
-                }
-            }
-
-            // ---------- 11. 分析报告 ----------
+            // ---------- 8. 分析报告 ----------
             snapshot.analysisReports.forEach { dto ->
                 val pid = profileMap[dto.profileId] ?: run { skipped++; return@forEach }
                 val existing = db.analysisReportDao()
@@ -448,7 +365,7 @@ class SnapshotImporter @Inject constructor(
                 )
             }
 
-            // ---------- 12. 用户偏好设置 ----------
+            // ---------- 9. 用户偏好设置 ----------
             // 分两类处理，因为这两种数据丢的方式不一样：
             //  - 累积型（自定义考试类型）：直接覆盖会把本机独有的类型抹掉，
             //    用户会莫名其妙少几个类型 —— 取并集。

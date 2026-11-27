@@ -4,8 +4,6 @@ import com.lingxi.scoretrack.data.local.AppDatabase
 import com.lingxi.scoretrack.data.local.entity.AnalysisReportEntity
 import com.lingxi.scoretrack.data.local.entity.ExamEntity
 import com.lingxi.scoretrack.data.local.entity.ExamGoalEntity
-import com.lingxi.scoretrack.data.local.entity.KnowledgePointEntity
-import com.lingxi.scoretrack.data.local.entity.MistakeEntity
 import com.lingxi.scoretrack.data.local.entity.PaperEntity
 import com.lingxi.scoretrack.data.local.entity.ProfileEntity
 import com.lingxi.scoretrack.data.local.entity.QuestionEntity
@@ -52,9 +50,6 @@ class SnapshotExporter @Inject constructor(
         val scores = mutableListOf<SyncScore>()
         val papers = mutableListOf<SyncPaper>()
         val questions = mutableListOf<SyncQuestion>()
-        val knowledgePoints = mutableListOf<SyncKnowledgePoint>()
-        val links = mutableListOf<SyncQuestionKnowledge>()
-        val mistakes = mutableListOf<SyncMistake>()
         val reports = mutableListOf<SyncAnalysisReport>()
 
         profiles.forEach { profile ->
@@ -64,9 +59,6 @@ class SnapshotExporter @Inject constructor(
             exams += dao.examDao().getByProfile(pid).map { it.toSync() }
             goals += dao.examGoalDao().getByProfileOnce(pid).map { it.toSync() }
             scores += dao.scoreDao().getByProfileOnce(pid).map { it.toSync() }
-            knowledgePoints += dao.knowledgePointDao().getByProfile(pid).map { it.toSync() }
-            links += dao.questionKnowledgeDao().getByProfileOnce(pid).map { it.toSync() }
-            mistakes += dao.mistakeDao().getByProfile(pid).map { it.toSync() }
             reports += dao.analysisReportDao().getByProfile(pid).map { it.toSync() }
 
             // 试卷要先收集完，题目再按试卷逐个取
@@ -96,9 +88,6 @@ class SnapshotExporter @Inject constructor(
             scores = scores,
             papers = papers,
             questions = questions,
-            knowledgePoints = knowledgePoints,
-            questionKnowledge = links,
-            mistakes = mistakes,
             analysisReports = reports,
             settings = settings
         )
@@ -204,33 +193,6 @@ private fun QuestionEntity.toSync() = SyncQuestion(
     isCorrect = isCorrect,
     wrongReason = wrongReason,
     updatedAt = updatedAt
-)
-
-private fun KnowledgePointEntity.toSync() = SyncKnowledgePoint(
-    id = id,
-    profileId = profileId,
-    subjectId = subjectId,
-    name = name,
-    aliases = aliases,
-    parentId = parentId,
-    source = source,
-    updatedAt = updatedAt
-)
-
-private fun com.lingxi.scoretrack.data.local.entity.QuestionKnowledgeEntity.toSync() =
-    SyncQuestionKnowledge(
-        questionId = questionId,
-        knowledgePointId = knowledgePointId
-    )
-
-private fun MistakeEntity.toSync() = SyncMistake(
-    id = id,
-    profileId = profileId,
-    questionId = questionId,
-    note = note,
-    reviewStatus = reviewStatus,
-    reviewCount = reviewCount,
-    lastReviewAt = lastReviewAt
 )
 
 private fun AnalysisReportEntity.toSync() = SyncAnalysisReport(

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  桌面小组件配置。
+
+  initialLayout 用 Glance 自带的加载占位布局：真机第一次摆放时，
+  RemoteViews 还没渲染出来，没有这个的话那一瞬间是纯透明 —— 看起来像没放上。
+
+  minWidth/minHeight 按 2x2 算；resizeMode 允许横向拉长到 4x2，
+  内容会跟着变成双行激励语（见 ScoreTrackWidget 里的 LocalSize 判断）。
+-->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/widget_description"
+    android:initialLayout="@layout/glance_default_loading_layout"
+    android:minHeight="110dp"
+    android:minWidth="180dp"
+    android:previewLayout="@layout/glance_default_loading_layout"
+    android:resizeMode="horizontal|vertical"
+    android:targetCellHeight="2"
+    android:targetCellWidth="2"
+    android:updatePeriodMillis="1800000"
+    android:widgetCategory="home_screen" />

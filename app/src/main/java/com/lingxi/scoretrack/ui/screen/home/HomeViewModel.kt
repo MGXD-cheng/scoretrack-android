@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lingxi.scoretrack.data.local.entity.ProfileEntity
 import com.lingxi.scoretrack.data.repository.ExamRepository
-import com.lingxi.scoretrack.data.repository.MistakeRepository
 import com.lingxi.scoretrack.data.repository.ProfileRepository
 import com.lingxi.scoretrack.domain.session.ProfileSession
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,7 +24,6 @@ import javax.inject.Inject
 class HomeViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
     private val examRepository: ExamRepository,
-    private val mistakeRepository: MistakeRepository,
     private val profileSession: ProfileSession
 ) : ViewModel() {
 
@@ -42,15 +40,13 @@ class HomeViewModel @Inject constructor(
                 combine(
                     allProfiles,
                     profileRepository.observeById(id),
-                    examRepository.observeLatest(id),
-                    mistakeRepository.observePendingCount(id)
-                ) { profiles, profile, latestExam, pending ->
+                    examRepository.observeLatest(id)
+                ) { profiles, profile, latestExam ->
                     HomeUiState(
                         isLoading = false,
                         profiles = profiles,
                         currentProfile = profile,
-                        latestExam = latestExam,
-                        pendingMistakes = pending
+                        latestExam = latestExam
                     )
                 }
             }

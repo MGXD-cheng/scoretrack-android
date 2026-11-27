@@ -36,7 +36,7 @@ import kotlin.math.roundToInt
 /**
  * 多档案数据对比。
  *
- * 只展示「可比的数字」——得分率、考试次数、错题量。
+ * 只展示「可比的数字」——得分率、考试次数。
  * 不做「总分对比」这种看着直观其实没意义的东西：
  * 一次满分 750、一次满分 600 的两次考试，总分放一起比是误导。
  */
@@ -154,8 +154,6 @@ private fun SummaryCard(summary: ProfileSummary, isLeader: Boolean) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 MetricItem("考试", "${summary.examCount} 场", Modifier.weight(1f))
                 MetricItem("科目", "${summary.subjectCount} 门", Modifier.weight(1f))
-                MetricItem("错题", "${summary.mistakeCount} 道", Modifier.weight(1f))
-                MetricItem("待复习", "${summary.pendingMistakes} 道", Modifier.weight(1f))
             }
 
             if (summary.latestExamName != null) {

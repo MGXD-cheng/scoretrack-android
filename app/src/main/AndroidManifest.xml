@@ -68,6 +68,23 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+        <!--
+            桌面小组件。
+            exported 必须为 true（Android 12 起强制）：宿主是桌面的进程，
+            不是我们的 App。LOCALE_CHANGED 用来在系统语言切换后重绘文案。
+        -->
+        <receiver
+            android:name=".widget.ScoreTrackWidgetReceiver"
+            android:exported="true"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/scoretrack_widget_info" />
+        </receiver>
     </application>
 
 </manifest>

@@ -8,13 +8,10 @@ import com.lingxi.scoretrack.data.local.dao.AppSettingDao
 import com.lingxi.scoretrack.data.local.dao.ExamDao
 import com.lingxi.scoretrack.data.local.dao.ExamGoalDao
 import com.lingxi.scoretrack.data.local.dao.ImportTaskDao
-import com.lingxi.scoretrack.data.local.dao.KnowledgePointDao
-import com.lingxi.scoretrack.data.local.dao.MistakeDao
 import com.lingxi.scoretrack.data.local.dao.PaperDao
 import com.lingxi.scoretrack.data.local.dao.ProfileCleanupDao
 import com.lingxi.scoretrack.data.local.dao.ProfileDao
 import com.lingxi.scoretrack.data.local.dao.QuestionDao
-import com.lingxi.scoretrack.data.local.dao.QuestionKnowledgeDao
 import com.lingxi.scoretrack.data.local.dao.ScoreDao
 import com.lingxi.scoretrack.data.local.dao.SubjectDao
 import com.lingxi.scoretrack.data.local.dao.SyncDeviceDao
@@ -58,15 +55,6 @@ object DatabaseModule {
 
     @Provides
     fun provideQuestionDao(db: AppDatabase): QuestionDao = db.questionDao()
-
-    @Provides
-    fun provideKnowledgePointDao(db: AppDatabase): KnowledgePointDao = db.knowledgePointDao()
-
-    @Provides
-    fun provideQuestionKnowledgeDao(db: AppDatabase): QuestionKnowledgeDao = db.questionKnowledgeDao()
-
-    @Provides
-    fun provideMistakeDao(db: AppDatabase): MistakeDao = db.mistakeDao()
 
     @Provides
     fun provideAnalysisReportDao(db: AppDatabase): AnalysisReportDao = db.analysisReportDao()

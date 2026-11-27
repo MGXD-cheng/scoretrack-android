@@ -10,7 +10,6 @@ import com.lingxi.scoretrack.data.local.entity.ScoreEntity
 import com.lingxi.scoretrack.data.local.entity.SubjectEntity
 import com.lingxi.scoretrack.data.repository.ExamRepository
 import com.lingxi.scoretrack.data.repository.ImportTaskRepository
-import com.lingxi.scoretrack.data.repository.MistakeRepository
 import com.lingxi.scoretrack.data.repository.PaperRepository
 import com.lingxi.scoretrack.data.repository.QuestionRepository
 import com.lingxi.scoretrack.data.repository.ScoreRepository
@@ -25,8 +24,8 @@ import kotlin.math.absoluteValue
 /**
  * 把 AI 识别结果写入数据库。
  *
- * **整个写入在一个事务里**：考试 → 科目 → 试卷 → 题目 → 成绩 → 错题。
- * 任一步失败全部回滚 —— 绝不能出现「考试建好了、但错题只写进去一半」的脏状态。
+ * **整个写入在一个事务里**：考试 → 科目 → 试卷 → 题目 → 成绩。
+ * 任一步失败全部回滚 —— 绝不能出现「考试建好了、但题目只写进去一半」的脏状态。
  *
  * 科目是复用优先：识别出「数学」就挂到已有科目上，识别出「技术」这种
  * 预置里没有的，就现建一个，不让用户为了导入先去手动加科目。
@@ -39,7 +38,6 @@ class CommitRecognizedExamUseCase @Inject constructor(
     private val paperRepository: PaperRepository,
     private val questionRepository: QuestionRepository,
     private val scoreRepository: ScoreRepository,
-    private val mistakeRepository: MistakeRepository,
     private val importTaskRepository: ImportTaskRepository
 ) {
 
@@ -115,12 +113,6 @@ class CommitRecognizedExamUseCase @Inject constructor(
                         isCorrect = false,
                         wrongReason = question.wrongReason
                     )
-                )
-                // 识别出来的错题直接进错题本，用户不用再手动加一遍
-                mistakeRepository.add(
-                    profileId = profileId,
-                    questionId = questionId,
-                    note = question.wrongReason
                 )
             }
         }

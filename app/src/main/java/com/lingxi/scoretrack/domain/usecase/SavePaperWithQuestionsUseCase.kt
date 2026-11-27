@@ -4,7 +4,6 @@ import androidx.room.withTransaction
 import com.lingxi.scoretrack.data.local.AppDatabase
 import com.lingxi.scoretrack.data.local.entity.PaperEntity
 import com.lingxi.scoretrack.data.local.entity.QuestionEntity
-import com.lingxi.scoretrack.data.repository.MistakeRepository
 import com.lingxi.scoretrack.data.repository.PaperRepository
 import com.lingxi.scoretrack.data.repository.QuestionRepository
 import com.lingxi.scoretrack.domain.model.QuestionDraft
@@ -14,18 +13,13 @@ import javax.inject.Singleton
 /**
  * 保存一份试卷的小题分。
  *
- * 一个事务里做三件事：**增删改题目** + **同步错题本**。
- *
- * 错题本的同步是这里最容易被忽略、但最要紧的一步：
- * 用户把一道错题的分数改对之后，它必须**从错题本里消失** ——
- * 否则错题本会越用越脏，用户就不信它了。
+ * 一个事务里做三件事：删题、写题、保存试卷。
  */
 @Singleton
 class SavePaperWithQuestionsUseCase @Inject constructor(
     private val database: AppDatabase,
     private val paperRepository: PaperRepository,
     private val questionRepository: QuestionRepository,
-    private val mistakeRepository: MistakeRepository
 ) {
 
     suspend fun invoke(
@@ -60,7 +54,7 @@ class SavePaperWithQuestionsUseCase @Inject constructor(
             existing.id
         }
 
-        // 2. 删掉用户移除的题（错题会随 FK CASCADE 一起清掉）
+        // 2. 删掉用户移除的题
         val keptIds = drafts.mapNotNullTo(mutableSetOf()) { draft ->
             draft.id.takeIf { it > 0L }
         }
@@ -68,25 +62,13 @@ class SavePaperWithQuestionsUseCase @Inject constructor(
             .filter { it.id !in keptIds }
             .forEach { questionRepository.delete(it) }
 
-        // 3. 逐题写入，并同步错题本
+        // 3. 逐题写入
         drafts.forEach { draft ->
             val entity = draft.toEntity(paperId)
-            val questionId = if (draft.id > 0L) {
+            if (draft.id > 0L) {
                 questionRepository.update(entity)
-                draft.id
             } else {
                 questionRepository.insert(entity)
-            }
-
-            if (draft.isWrong) {
-                mistakeRepository.add(
-                    profileId = profileId,
-                    questionId = questionId,
-                    note = draft.wrongReason.ifBlank { null }
-                )
-            } else {
-                // 改对了就从错题本移除
-                mistakeRepository.deleteByQuestion(questionId)
             }
         }
 
@@ -97,7 +79,7 @@ class SavePaperWithQuestionsUseCase @Inject constructor(
         id = id,
         paperId = paperId,
         number = number.ifBlank { "-" },
-        // 之前这里一直写死 null —— QuestionEntity.type 有字段、错题详情也在读，
+        // 之前这里一直写死 null —— QuestionEntity.type 有字段、题目详情也在读，
         // 但从来没有值被写进去过。题型分类之所以是空的，根因就在这一行。
         type = type.takeIf { it.isNotBlank() },
         fullScore = fullScoreValue,

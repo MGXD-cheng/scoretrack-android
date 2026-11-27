@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import android.net.Uri
 import com.lingxi.scoretrack.data.local.entity.ProfileEntity
-import com.lingxi.scoretrack.data.repository.AppSettingRepository
 import com.lingxi.scoretrack.data.repository.ProfileRepository
 import com.lingxi.scoretrack.domain.backup.BackupManager
 import com.lingxi.scoretrack.BuildConfig
@@ -23,7 +22,6 @@ import javax.inject.Inject
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
-    private val appSettingRepository: AppSettingRepository,
     private val backupManager: BackupManager,
     private val profileSession: ProfileSession,
     private val updateChecker: UpdateChecker
@@ -38,28 +36,6 @@ class SettingsViewModel @Inject constructor(
 
     /** 当前档案。直接透传全局会话，不再自己存一份 —— 否则和别的页面会对不上。 */
     val currentProfileId: StateFlow<Long> = profileSession.currentProfileId
-
-    private val _autoKnowledge = MutableStateFlow(false)
-
-    /** 导入错题后是否自动归纳知识点 */
-    val autoKnowledge: StateFlow<Boolean> = _autoKnowledge.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            _autoKnowledge.value = appSettingRepository.getBoolean(
-                AppSettingRepository.KEY_AUTO_KNOWLEDGE,
-                false
-            )
-        }
-    }
-
-    fun setAutoKnowledge(enabled: Boolean) {
-        // 先更新界面再落盘：开关要跟手，不能等一次数据库写入的往返
-        _autoKnowledge.value = enabled
-        viewModelScope.launch {
-            appSettingRepository.putBoolean(AppSettingRepository.KEY_AUTO_KNOWLEDGE, enabled)
-        }
-    }
 
     fun switchProfile(profile: ProfileEntity) {
         viewModelScope.launch { profileSession.switchTo(profile.id) }

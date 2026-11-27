@@ -13,7 +13,7 @@ import com.lingxi.scoretrack.ui.navigation.AppDestination
 import com.lingxi.scoretrack.ui.navigation.navigateToTab
 
 /**
- * 底部导航栏：首页 / 成绩 / 错题 / 图表 / 设置。
+ * 底部导航栏：首页 / 成绩 / 设置。
  *
  * 选中判定用 destination.hierarchy，保证嵌套图场景下也正确；
  * 跳转统一走 navigateToTab，栈始终是扁平的「startDestination + 当前 Tab」。

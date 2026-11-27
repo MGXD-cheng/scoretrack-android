@@ -252,8 +252,8 @@ private fun ExamCard(
  * 删除考试的二次确认。
  *
  * 这里特意多花几行字解释「会连带删掉什么」，因为 exam → paper → question
- * → mistake 这条链在界面上**完全不可见**。用户以为只是不记这场考试了，
- * 实际上可能一起删掉十几条错题记录 —— 事后才发现就晚了。
+ * 这条链在界面上**完全不可见**。用户以为只是不记这场考试了，
+ * 实际上连题目带试卷一起没了 —— 事后才发现就晚了。
  */
 @Composable
 private fun DeleteExamDialog(
@@ -314,18 +314,12 @@ private fun DeleteExamDialog(
                                         color = body
                                     )
                                 }
-                                if (c.mistakes > 0) {
-                                    Text(
-                                        text = "· ${c.mistakes} 条错题记录",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = body
-                                    )
-                                }
                             }
+
                         }
                     } else {
                         Text(
-                            text = "这场考试下面没有试卷或错题，删除不会波及其它数据。",
+                            text = "这场考试下面没有试卷，删除不会波及其它数据。",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

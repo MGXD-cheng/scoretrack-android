@@ -7,8 +7,7 @@ data class HomeUiState(
     val isLoading: Boolean = true,
     val profiles: List<ProfileEntity> = emptyList(),
     val currentProfile: ProfileEntity? = null,
-    val latestExam: ExamEntity? = null,
-    val pendingMistakes: Int = 0
+    val latestExam: ExamEntity? = null
 ) {
     /** 没有任何档案 —— 走引导创建流程 */
     val isEmpty: Boolean

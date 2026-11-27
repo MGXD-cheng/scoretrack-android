@@ -13,24 +13,11 @@ import androidx.room.Query
  * 按依赖顺序从叶子往根删，行为完全可控。
  *
  * 删除顺序（叶子 → 根）：
- * question_knowledge → mistake → question → paper → score
- * → analysis_report / import_task / knowledge_point → subject → exam → profile
+ * question → paper → score
+ * → analysis_report / import_task → subject → exam → profile
  */
 @Dao
 interface ProfileCleanupDao {
-
-    /** 最内层：题目-知识点关联 */
-    @Query(
-        "DELETE FROM question_knowledge WHERE questionId IN (" +
-            "SELECT id FROM question WHERE paperId IN (" +
-            "SELECT id FROM paper WHERE examId IN (" +
-            "SELECT id FROM exam WHERE profileId = :profileId)))"
-    )
-    suspend fun deleteQuestionKnowledge(profileId: Long)
-
-    /** 错题（挂 profile + question） */
-    @Query("DELETE FROM mistake WHERE profileId = :profileId")
-    suspend fun deleteMistakes(profileId: Long)
 
     /** 题目（挂 paper） */
     @Query(
@@ -59,9 +46,6 @@ interface ProfileCleanupDao {
 
     @Query("DELETE FROM import_task WHERE profileId = :profileId")
     suspend fun deleteImportTasks(profileId: Long)
-
-    @Query("DELETE FROM knowledge_point WHERE profileId = :profileId")
-    suspend fun deleteKnowledgePoints(profileId: Long)
 
     @Query("DELETE FROM subject WHERE profileId = :profileId")
     suspend fun deleteSubjects(profileId: Long)

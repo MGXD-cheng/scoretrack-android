@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -28,11 +29,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -108,6 +111,17 @@ fun ExamEditScreen(
                         onManageTypes = { showTypeDialog = true },
                         onDateClick = { showDatePicker = true },
                         onRemarkChange = viewModel::updateRemark
+                    )
+                }
+                item {
+                    ReflectionCard(
+                        reflection = state.reflection,
+                        aiReflection = state.aiReflection,
+                        isReflecting = state.isReflecting,
+                        error = state.reflectError,
+                        onReflectionChange = viewModel::updateReflection,
+                        onGenerate = viewModel::generateReflection,
+                        onDismissError = viewModel::dismissReflectError
                     )
                 }
 
@@ -266,6 +280,120 @@ private fun ExamInfoCard(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+        }
+    }
+}
+
+/**
+ * 成绩反思 + AI 复盘。
+ *
+ * 单独成一张卡，而不是塞进「考试信息」里：反思是主观内容，通常写好几行，
+ * 和上面名字、日期那几个单行输入框不是一类东西。
+ */
+@Composable
+private fun ReflectionCard(
+    reflection: String,
+    aiReflection: String?,
+    isReflecting: Boolean,
+    error: String?,
+    onReflectionChange: (String) -> Unit,
+    onGenerate: () -> Unit,
+    onDismissError: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "成绩反思",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = "这次为什么考成这样？粗心、时间不够、还是某个知识点没吃透 —— " +
+                        "写下来，AI 才能顺着你的思路给建议。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            OutlinedTextField(
+                value = reflection,
+                onValueChange = onReflectionChange,
+                placeholder = { Text("例：数学最后两道大题没时间做，选择错了 3 道") },
+                minLines = 3,
+                maxLines = 6,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            FilledTonalButton(
+                onClick = onGenerate,
+                enabled = !isReflecting,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (isReflecting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("正在分析…")
+                } else {
+                    Text(if (aiReflection.isNullOrBlank()) "让 AI 帮我分析" else "重新分析")
+                }
+            }
+
+            error?.let { message ->
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 12.dp, top = 4.dp, end = 4.dp, bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = message,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.weight(1f)
+                        )
+                        TextButton(onClick = onDismissError) { Text("知道了") }
+                    }
+                }
+            }
+
+            aiReflection?.takeIf { it.isNotBlank() }?.let { text ->
+                Surface(
+                    color = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "AI 的建议",
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                        // 长按可选中复制 —— 用户常想把它粘到笔记本里
+                        SelectionContainer {
+                            Text(
+                                text = text,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

@@ -265,10 +265,6 @@ private fun HomeContent(
         }
 
         item {
-            InfoCard(
-                title = "待复习错题",
-                value = "${state.pendingMistakes} 道"
-            )
         }
 
         item {

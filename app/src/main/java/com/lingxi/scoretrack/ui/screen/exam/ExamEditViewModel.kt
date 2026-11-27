@@ -10,6 +10,8 @@ import com.lingxi.scoretrack.data.repository.ScoreRepository
 import com.lingxi.scoretrack.data.repository.SubjectRepository
 import com.lingxi.scoretrack.ui.util.formatScore
 import com.lingxi.scoretrack.domain.exam.ExamTypeCatalog
+import com.lingxi.scoretrack.domain.usecase.GenerateReflectionUseCase
+import com.lingxi.scoretrack.domain.usecase.ReflectionEntry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +26,8 @@ class ExamEditViewModel @Inject constructor(
     private val scoreRepository: ScoreRepository,
     private val subjectRepository: SubjectRepository,
     private val appSettingRepository: AppSettingRepository,
-    private val examTypeCatalog: ExamTypeCatalog
+    private val examTypeCatalog: ExamTypeCatalog,
+    private val generateReflectionUseCase: GenerateReflectionUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExamEditUiState())
@@ -64,6 +67,8 @@ class ExamEditViewModel @Inject constructor(
                 type = exam?.type ?: ExamTypeCatalog.DEFAULT_TYPES.first(),
                 date = exam?.date ?: System.currentTimeMillis(),
                 remark = exam?.remark.orEmpty(),
+                reflection = exam?.reflection.orEmpty(),
+                aiReflection = exam?.aiReflection,
                 entries = subjects.map { subject ->
                     val old = existing.firstOrNull { it.subjectId == subject.id }
                     ScoreEntryInput(
@@ -114,6 +119,60 @@ class ExamEditViewModel @Inject constructor(
 
     fun updateRemark(value: String) = _uiState.update { it.copy(remark = value) }
 
+    fun updateReflection(value: String) = _uiState.update { it.copy(reflection = value) }
+
+    fun dismissReflectError() = _uiState.update { it.copy(reflectError = null) }
+
+    /**
+     * 让 AI 基于「当前填的成绩 + 用户写的反思」给一段复盘建议。
+     *
+     * 不要求先保存 —— 用户刚录完分数时印象最深，这时候写反思、看建议
+     * 才顺。所以入参用的是界面上的数据，不是 examId。
+     *
+     * 结果写进 [ExamEditUiState.aiReflection]，**不动**用户写的那段文字：
+     * 用户的原话是他自己的东西，不该被模型的输出替换掉。
+     */
+    fun generateReflection() {
+        val state = _uiState.value
+        if (state.isReflecting) return
+
+        val entries = state.entries.mapNotNull { entry ->
+            val score = entry.score.trim().toFloatOrNull() ?: return@mapNotNull null
+            ReflectionEntry(
+                subjectId = entry.subjectId,
+                subjectName = entry.subjectName,
+                score = score,
+                fullScore = entry.fullScore.trim().toFloatOrNull() ?: 0f
+            )
+        }
+        if (entries.isEmpty()) {
+            _uiState.update { it.copy(reflectError = "先填几科成绩，再来分析吧") }
+            return
+        }
+
+        _uiState.update { it.copy(isReflecting = true, reflectError = null) }
+        viewModelScope.launch {
+            generateReflectionUseCase(
+                examName = state.name.trim(),
+                examType = state.type,
+                entries = entries,
+                reflection = state.reflection
+            ).fold(
+                onSuccess = { text ->
+                    _uiState.update { it.copy(isReflecting = false, aiReflection = text) }
+                },
+                onFailure = { error ->
+                    _uiState.update {
+                        it.copy(
+                            isReflecting = false,
+                            reflectError = error.message ?: "生成失败，请重试"
+                        )
+                    }
+                }
+            )
+        }
+    }
+
     fun updateEntry(index: Int, transform: (ScoreEntryInput) -> ScoreEntryInput) {
         _uiState.update { state ->
             val list = state.entries.toMutableList()
@@ -136,7 +195,9 @@ class ExamEditViewModel @Inject constructor(
                 name = state.name.trim(),
                 type = state.type,
                 date = state.date,
-                remark = state.remark.trim().takeIf { it.isNotEmpty() }
+                remark = state.remark.trim().takeIf { it.isNotEmpty() },
+                reflection = state.reflection.trim().takeIf { it.isNotEmpty() },
+                aiReflection = state.aiReflection?.takeIf { it.isNotBlank() }
             )
 
             // 只保存填了分数的科目

@@ -34,9 +34,6 @@ data class SyncSnapshot(
     @SerialName("scores") val scores: List<SyncScore> = emptyList(),
     @SerialName("papers") val papers: List<SyncPaper> = emptyList(),
     @SerialName("questions") val questions: List<SyncQuestion> = emptyList(),
-    @SerialName("knowledgePoints") val knowledgePoints: List<SyncKnowledgePoint> = emptyList(),
-    @SerialName("questionKnowledge") val questionKnowledge: List<SyncQuestionKnowledge> = emptyList(),
-    @SerialName("mistakes") val mistakes: List<SyncMistake> = emptyList(),
     @SerialName("analysisReports") val analysisReports: List<SyncAnalysisReport> = emptyList(),
 
     /**
@@ -54,9 +51,8 @@ data class SyncSnapshot(
     /** 概览用：总共多少条记录 */
     val totalRecords: Int
         get() = profiles.size + subjects.size + exams.size + examGoals.size +
-            scores.size + papers.size + questions.size + knowledgePoints.size +
-            questionKnowledge.size + mistakes.size + analysisReports.size +
-            settings.size
+            scores.size + papers.size + questions.size +
+            analysisReports.size + settings.size
 
     companion object {
         const val PROTOCOL_VERSION = 1
@@ -152,35 +148,6 @@ data class SyncQuestion(
     @SerialName("isCorrect") val isCorrect: Boolean? = null,
     @SerialName("wrongReason") val wrongReason: String? = null,
     @SerialName("updatedAt") val updatedAt: Long = 0L
-)
-
-@Serializable
-data class SyncKnowledgePoint(
-    @SerialName("id") val id: Long,
-    @SerialName("profileId") val profileId: Long,
-    @SerialName("subjectId") val subjectId: Long,
-    @SerialName("name") val name: String,
-    @SerialName("aliases") val aliases: List<String> = emptyList(),
-    @SerialName("parentId") val parentId: Long? = null,
-    @SerialName("source") val source: String = "ai",
-    @SerialName("updatedAt") val updatedAt: Long = 0L
-)
-
-@Serializable
-data class SyncQuestionKnowledge(
-    @SerialName("questionId") val questionId: Long,
-    @SerialName("knowledgePointId") val knowledgePointId: Long
-)
-
-@Serializable
-data class SyncMistake(
-    @SerialName("id") val id: Long,
-    @SerialName("profileId") val profileId: Long,
-    @SerialName("questionId") val questionId: Long,
-    @SerialName("note") val note: String? = null,
-    @SerialName("reviewStatus") val reviewStatus: String = "未复习",
-    @SerialName("reviewCount") val reviewCount: Int = 0,
-    @SerialName("lastReviewAt") val lastReviewAt: Long? = null
 )
 
 @Serializable

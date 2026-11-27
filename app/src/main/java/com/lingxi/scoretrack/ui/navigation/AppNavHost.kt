@@ -20,10 +20,6 @@ import com.lingxi.scoretrack.ui.screen.goal.GoalEditScreen
 import com.lingxi.scoretrack.ui.screen.home.HomeScreen
 import com.lingxi.scoretrack.ui.screen.compare.ProfileCompareScreen
 import com.lingxi.scoretrack.ui.screen.importsheet.ImportScreen
-import com.lingxi.scoretrack.ui.screen.knowledge.KnowledgeScreen
-import com.lingxi.scoretrack.ui.screen.mistakes.MistakeDetailScreen
-import com.lingxi.scoretrack.ui.screen.mistakes.MistakeImportScreen
-import com.lingxi.scoretrack.ui.screen.mistakes.MistakesScreen
 import com.lingxi.scoretrack.ui.screen.paper.PaperEditScreen
 import com.lingxi.scoretrack.ui.screen.scores.ScoresScreen
 import com.lingxi.scoretrack.ui.screen.settings.AiConfigScreen
@@ -116,39 +112,6 @@ fun AppNavHost(
                     onBack = { navController.popBackStack() }
                 )
             }
-            composable(AppDestination.Mistakes.route) {
-                MistakesScreen(
-                    onOpenDetail = { mistakeId ->
-                        navController.navigate(AppDestination.mistakeDetailRoute(mistakeId))
-                    },
-                    onOpenKnowledge = {
-                        navController.navigate(AppDestination.KNOWLEDGE)
-                    },
-                    onOpenImport = {
-                        navController.navigate(AppDestination.MISTAKE_IMPORT)
-                    }
-                )
-            }
-
-            composable(AppDestination.KNOWLEDGE) {
-                KnowledgeScreen(onBack = { navController.popBackStack() })
-            }
-
-            composable(
-                route = "${AppDestination.MISTAKE_DETAIL}?mistakeId={mistakeId}",
-                arguments = listOf(
-                    navArgument("mistakeId") {
-                        type = NavType.LongType
-                        defaultValue = 0L
-                    }
-                )
-            ) { entry ->
-                val mistakeId = entry.arguments?.getLong("mistakeId") ?: 0L
-                MistakeDetailScreen(
-                    mistakeId = mistakeId,
-                    onBack = { navController.popBackStack() }
-                )
-            }
             composable(AppDestination.GOAL_EDIT) {
                 GoalEditScreen(onBack = { navController.popBackStack() })
             }
@@ -204,10 +167,6 @@ fun AppNavHost(
 
             composable(AppDestination.PROFILE_COMPARE) {
                 ProfileCompareScreen(onBack = { navController.popBackStack() })
-            }
-
-            composable(AppDestination.MISTAKE_IMPORT) {
-                MistakeImportScreen(onBack = { navController.popBackStack() })
             }
 
             composable(AppDestination.SYNC) {
