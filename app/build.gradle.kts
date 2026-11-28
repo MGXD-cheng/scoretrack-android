@@ -51,7 +51,9 @@ android {
         applicationId = "com.lingxi.scoretrack"
         minSdk = 27
         targetSdk = 35
-        versionCode = 8
+        // 每次发布都要 +1：Android 只认 versionCode 判断"是不是新版"，
+        // 不升的话覆盖安装会被系统当成降级直接拒绝
+        versionCode = 9
         versionName = "0.5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -139,9 +141,6 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.core)
-    // --- Glance 桌面小组件 ---
-    implementation(libs.androidx.glance.appwidget)
-    implementation(libs.androidx.glance.material3)
 
     // --- Navigation ---
     implementation(libs.androidx.navigation.compose)

@@ -71,15 +71,14 @@
         <!--
             桌面小组件。
             exported 必须为 true（Android 12 起强制）：宿主是桌面的进程，
-            不是我们的 App。LOCALE_CHANGED 用来在系统语言切换后重绘文案。
+            不是我们的 App。APPWIDGET_UPDATE 是系统让 Provider 重画的入口。
         -->
         <receiver
-            android:name=".widget.ScoreTrackWidgetReceiver"
+            android:name=".widget.ScoreTrackWidgetProvider"
             android:exported="true"
             android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="android.intent.action.LOCALE_CHANGED" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"

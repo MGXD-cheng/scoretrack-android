@@ -1,5 +1,6 @@
 package com.lingxi.scoretrack
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -8,13 +9,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.glance.appwidget.updateAll
-import androidx.lifecycle.lifecycleScope
 import com.lingxi.scoretrack.ui.navigation.AppNavHost
 import com.lingxi.scoretrack.ui.theme.ScoreTrackTheme
-import com.lingxi.scoretrack.widget.ScoreTrackWidget
+import com.lingxi.scoretrack.widget.ScoreTrackWidgetProvider
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 
 /**
  * 单 Activity 架构，全部页面由 Compose 承载。
@@ -48,8 +46,13 @@ class MainActivity : ComponentActivity() {
      */
     override fun onResume() {
         super.onResume()
-        lifecycleScope.launch {
-            runCatching { ScoreTrackWidget().updateAll(this@MainActivity) }
+        // 发广播让 Provider 重画，而不是在这里自己查库拼 RemoteViews：
+        // 刷新逻辑只留一份，系统定时更新和这里的主动更新走同一条路。
+        runCatching {
+            sendBroadcast(
+                Intent(this, ScoreTrackWidgetProvider::class.java)
+                    .setAction(ScoreTrackWidgetProvider.ACTION_REFRESH)
+            )
         }
     }
 }

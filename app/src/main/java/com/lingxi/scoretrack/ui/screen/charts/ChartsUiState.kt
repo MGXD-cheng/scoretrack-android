@@ -36,7 +36,20 @@ data class LossSlice(
  */
 data class HeatRow(
     val subjectName: String,
-    val rates: List<Float?>
+    val cells: List<HeatCell?>
+)
+
+/**
+ * 热力图的一个格子。
+ *
+ * 两个值缺一不可：**数字显示原分，底色按得分率**。
+ * 只显示得分率的话，语数英（满分 150）考 128 会写成 85，看不出真实分数；
+ * 只按原分上色的话，150 分制的 120 和 100 分制的 80 得分率其实一样，
+ * 颜色却差一大截 —— 一眼扫过去会误判「数学拖后腿」。
+ */
+data class HeatCell(
+    val score: Float,
+    val rate: Float
 )
 
 data class ChartsUiState(
@@ -156,20 +169,25 @@ data class ChartsUiState(
                 .map { subject ->
                     HeatRow(
                         subjectName = subject.name,
-                        rates = recent.map { exam ->
+                        cells = recent.map { exam ->
                             scoresByExam[exam.id]
                                 .orEmpty()
                                 .firstOrNull { it.subjectId == subject.id }
-                                ?.let { scoreRate(it.score, it.fullScore) }
+                                ?.let { score ->
+                                    HeatCell(
+                                        score = score.score,
+                                        rate = scoreRate(score.score, score.fullScore)
+                                    )
+                                }
                         }
                     )
                 }
                 // 一次成绩都没有的科目整行不显示：一行纯灰既占地方又不带信息。
-                // 行内仍保留零星灰格 —— 那是「这次没考」，跟「整科没数据」不是一回事。
-                .filter { row -> row.rates.any { it != null } }
+                // 行内仍保留零星空格 —— 那是「这次没考」，跟「整科没数据」不是一回事。
+                .filter { row -> row.cells.any { it != null } }
         }
 
-    /** 热力图的列标题，跟 [heatMap] 每行的 rates 一一对应 */
+    /** 热力图的列标题，跟 [heatMap] 每行的 cells 一一对应 */
     val heatExamLabels: List<String>
         get() = recentExamsForHeat.map { it.name }
 

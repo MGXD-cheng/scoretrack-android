@@ -91,21 +91,23 @@ fun SubjectExamHeatMap(
                     modifier = Modifier.width(subjectColumnWidth)
                 )
 
-                row.rates.forEach { rate ->
+                row.cells.forEach { cell ->
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .height(28.dp)
                             .clip(RoundedCornerShape(6.dp))
-                            .background(cellColor(rate)),
+                            // 底色永远按得分率：这是唯一能跨满分制比较的东西
+                            .background(cellColor(cell?.rate)),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (rate != null) {
+                        if (cell != null) {
+                            // 数字给原分：语数英满分 150，写「128」比写「85」有用得多
                             Text(
-                                text = "${(rate * 100).toInt()}",
+                                text = scoreLabel(cell.score),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Medium,
-                                color = cellContentColor(rate)
+                                color = cellContentColor(cell.rate)
                             )
                         }
                     }
@@ -114,9 +116,24 @@ fun SubjectExamHeatMap(
         }
 
         Spacer(modifier = Modifier.height(12.dp))
+        // 不写这一行的话，用户会以为格子里的数字还是得分率
+        Text(
+            text = "格子里是原分，底色按得分率",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 6.dp)
+        )
         HeatLegend()
     }
 }
+
+/**
+ * 格子里的数字：**原分**。
+ *
+ * 89.5 这种半分保留一位小数，120.0 这种整分不显示 ".0"。
+ */
+private fun scoreLabel(score: Float): String =
+    if (score == score.toInt().toFloat()) score.toInt().toString() else "%.1f".format(score)
 
 /**
  * 格子底色。

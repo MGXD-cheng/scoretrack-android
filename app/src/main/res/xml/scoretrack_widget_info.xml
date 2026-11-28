@@ -2,18 +2,19 @@
 <!--
   桌面小组件配置。
 
-  initialLayout 用 Glance 自带的加载占位布局：真机第一次摆放时，
-  RemoteViews 还没渲染出来，没有这个的话那一瞬间是纯透明 —— 看起来像没放上。
+  initialLayout 指向**我们自己的** widget_scoretrack（不再是 Glance 的
+  glance_default_loading_layout）。之前那个 loading 占位图是 Glance 库内部
+  资源，一旦组合失败就永远停在那一帧 —— 用户看到的就是不停转圈。
+  现在初始布局就是最终布局（各 TextView 先空着），渲染成功即覆盖。
 
-  minWidth/minHeight 按 2x2 算；resizeMode 允许横向拉长到 4x2，
-  内容会跟着变成双行激励语（见 ScoreTrackWidget 里的 LocalSize 判断）。
+  minWidth/minHeight 按 2x2 算；resizeMode 允许拉宽到 4x2。
 -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_description"
-    android:initialLayout="@layout/glance_default_loading_layout"
+    android:initialLayout="@layout/widget_scoretrack"
     android:minHeight="110dp"
     android:minWidth="180dp"
-    android:previewLayout="@layout/glance_default_loading_layout"
+    android:previewLayout="@layout/widget_scoretrack"
     android:resizeMode="horizontal|vertical"
     android:targetCellHeight="2"
     android:targetCellWidth="2"

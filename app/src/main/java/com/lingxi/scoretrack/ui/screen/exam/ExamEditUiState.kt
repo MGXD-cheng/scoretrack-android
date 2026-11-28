@@ -29,6 +29,13 @@ data class ExamEditUiState(
     val reflection: String = "",
     /** AI 基于成绩 + 反思给出的建议。和用户原话分开，互不覆盖 */
     val aiReflection: String? = null,
+    /**
+     * AI 建议是否已经落库。
+     *
+     * 生成是花了 token 的，不该因为用户没点「保存」就消失 ——
+     * 生成成功即写库，这里只用来给界面一个「已保存」的确认。
+     */
+    val aiReflectionSaved: Boolean = false,
     val isReflecting: Boolean = false,
     val reflectError: String? = null,
     val entries: List<ScoreEntryInput> = emptyList(),

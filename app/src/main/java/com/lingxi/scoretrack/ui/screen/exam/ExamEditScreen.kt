@@ -77,7 +77,11 @@ fun ExamEditScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         AppTopBar(
             title = if (state.isEditing) "编辑考试" else "新建考试",
-            onBack = onBack,
+            // 顺手返回时把反思存下来：写下的东西不该因为忘点保存键就没了
+            onBack = {
+                viewModel.saveSilently()
+                onBack()
+            },
             actions = {
                 TextButton(
                     onClick = { viewModel.save(onBack) },
@@ -117,6 +121,7 @@ fun ExamEditScreen(
                     ReflectionCard(
                         reflection = state.reflection,
                         aiReflection = state.aiReflection,
+                        aiSaved = state.aiReflectionSaved,
                         isReflecting = state.isReflecting,
                         error = state.reflectError,
                         onReflectionChange = viewModel::updateReflection,
@@ -294,6 +299,7 @@ private fun ExamInfoCard(
 private fun ReflectionCard(
     reflection: String,
     aiReflection: String?,
+    aiSaved: Boolean,
     isReflecting: Boolean,
     error: String?,
     onReflectionChange: (String) -> Unit,
@@ -381,7 +387,7 @@ private fun ReflectionCard(
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            text = "AI 的建议",
+                            text = if (aiSaved) "AI 的建议 · 已保存" else "AI 的建议",
                             style = MaterialTheme.typography.labelLarge
                         )
                         // 长按可选中复制 —— 用户常想把它粘到笔记本里

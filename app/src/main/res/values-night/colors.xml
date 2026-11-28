@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  小组件夜间配色。
+  RemoteViews 的布局是纯 XML，读不到 Compose 的主题，
+  所以夜间只能靠资源限定符自己分一套 —— 系统切夜间模式会走这里。
+-->
+<resources>
+    <color name="widget_surface">#FF10131A</color>
+    <color name="widget_on_surface">#FFE3E2E6</color>
+    <color name="widget_on_surface_variant">#FFC4C6CF</color>
+</resources>

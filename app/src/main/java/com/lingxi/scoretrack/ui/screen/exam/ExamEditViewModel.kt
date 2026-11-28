@@ -121,6 +121,44 @@ class ExamEditViewModel @Inject constructor(
 
     fun updateReflection(value: String) = _uiState.update { it.copy(reflection = value) }
 
+    /**
+     * AI 建议生成成功就落库。
+     *
+     * 之前只在内存里，用户看到建议一高兴直接退出，下次打开空空如也 ——
+     * 而这次调用是真花了 token 的。所以这里立刻写回 exam.aiReflection，
+     * 只碰这一个字段，不动分数（用户可能还在改）。
+     *
+     * 新建考试还没有 id，只能等首次保存；那条路径由 [save] 负责带上。
+     */
+    private fun persistAiReflection(text: String) {
+        val examId = editingExamId
+        if (examId == 0L) return
+        viewModelScope.launch {
+            runCatching {
+                val exam = examRepository.getById(examId) ?: return@launch
+                examRepository.update(exam.copy(aiReflection = text))
+                _uiState.update { it.copy(aiReflectionSaved = true) }
+            }
+        }
+    }
+
+    /**
+     * 静默保存：不导航、不弹提示。
+     *
+     * 用在「返回」时。用户可能只是顺手退出，但他写下的反思是自己的东西，
+     * 不该因为忘点保存键就没了。只在确实有反思内容时才写库，
+     * 纯浏览不会产生任何写入。
+     *
+     * 新建（还没有 id）时什么都不做：留一条没名没姓的考试比丢了更糟。
+     */
+    fun saveSilently() {
+        val state = _uiState.value
+        if (!state.isEditing || state.isSaving) return
+        if (state.reflection.isBlank() && state.aiReflection.isNullOrBlank()) return
+        if (state.name.isBlank()) return
+        save { }
+    }
+
     fun dismissReflectError() = _uiState.update { it.copy(reflectError = null) }
 
     /**
@@ -159,7 +197,10 @@ class ExamEditViewModel @Inject constructor(
                 reflection = state.reflection
             ).fold(
                 onSuccess = { text ->
-                    _uiState.update { it.copy(isReflecting = false, aiReflection = text) }
+                    _uiState.update {
+                        it.copy(isReflecting = false, aiReflection = text)
+                    }
+                    persistAiReflection(text)
                 },
                 onFailure = { error ->
                     _uiState.update {

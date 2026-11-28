@@ -5,4 +5,9 @@
     <color name="app_background_dark">#FF10131A</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- 小组件（RemoteViews 读不到 Compose 主题，自带一套；夜间见 values-night/colors.xml） -->
+    <color name="widget_surface">#FFF7F9FC</color>
+    <color name="widget_on_surface">#FF1B1B1F</color>
+    <color name="widget_on_surface_variant">#FF44474E</color>
 </resources>
